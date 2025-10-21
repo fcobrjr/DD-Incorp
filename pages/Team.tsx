@@ -1,9 +1,11 @@
 
+
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
 import { TeamMember } from '../types';
-import { EditIcon, TrashIcon } from '../components/icons';
+// FIX: Replaced unsupported 'buttonLabel' and 'onButtonClick' props with a button passed as a child to PageHeader for consistency. This also required importing the PlusIcon.
+import { EditIcon, TrashIcon, PlusIcon } from '../components/icons';
 
 const Team: React.FC = () => {
   const { teamMembers, setTeamMembers } = useContext(AppContext)!;
@@ -43,7 +45,16 @@ const Team: React.FC = () => {
 
   return (
     <div className="p-8">
-      <PageHeader title="Equipes / Usuários" buttonLabel="Novo Membro" onButtonClick={() => openModal()} />
+      {/* FIX: Replaced unsupported 'buttonLabel' and 'onButtonClick' props with a button passed as a child to PageHeader for consistency. */}
+      <PageHeader title="Equipes / Usuários">
+        <button
+          onClick={() => openModal()}
+          className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-150"
+        >
+          <PlusIcon className="w-5 h-5 mr-2" />
+          Novo Membro
+        </button>
+      </PageHeader>
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
