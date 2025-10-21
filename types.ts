@@ -15,11 +15,13 @@ export interface CorrelatedResource {
 
 export interface Activity extends BaseItem {
   description: string;
+  sla: number; // Service Level Agreement in minutes
   tools: CorrelatedResource[];
   materials: CorrelatedResource[];
 }
 
-export interface CommonArea extends BaseItem {
+export interface CommonArea {
+  id: string;
   client: string;
   location: string;
   subLocation: string;

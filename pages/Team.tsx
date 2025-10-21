@@ -1,10 +1,8 @@
 
-
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
 import { TeamMember } from '../types';
-// FIX: Replaced unsupported 'buttonLabel' and 'onButtonClick' props with a button passed as a child to PageHeader for consistency. This also required importing the PlusIcon.
 import { EditIcon, TrashIcon, PlusIcon } from '../components/icons';
 
 const Team: React.FC = () => {
@@ -45,7 +43,6 @@ const Team: React.FC = () => {
 
   return (
     <div className="p-8">
-      {/* FIX: Replaced unsupported 'buttonLabel' and 'onButtonClick' props with a button passed as a child to PageHeader for consistency. */}
       <PageHeader title="Equipes / Usuários">
         <button
           onClick={() => openModal()}
@@ -84,17 +81,27 @@ const Team: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white rounded-lg p-8 w-full max-w-lg">
-            <h3 className="text-xl font-bold mb-4">{currentItem ? 'Editar Membro' : 'Novo Membro'}</h3>
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-lg">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-6">{currentItem ? 'Editar Membro' : 'Novo Membro'}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <input type="text" name="name" value={formState.name} onChange={handleInputChange} placeholder="Nome do Membro" className="w-full p-2 border rounded" required />
-                <input type="text" name="role" value={formState.role} onChange={handleInputChange} placeholder="Função (ex: Camareira, ASG)" className="w-full p-2 border rounded" required />
+              <div className="space-y-5">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium leading-6 text-gray-900">Nome do Membro</label>
+                  <div className="mt-2">
+                    <input type="text" id="name" name="name" value={formState.name} onChange={handleInputChange} placeholder="Ex: João da Silva" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="role" className="block text-sm font-medium leading-6 text-gray-900">Função</label>
+                  <div className="mt-2">
+                    <input type="text" id="role" name="role" value={formState.role} onChange={handleInputChange} placeholder="Ex: Camareira, ASG" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 flex justify-end space-x-4">
-                <button type="button" onClick={closeModal} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded">Salvar</button>
+              <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4">
+                <button type="button" onClick={closeModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Salvar</button>
               </div>
             </form>
           </div>

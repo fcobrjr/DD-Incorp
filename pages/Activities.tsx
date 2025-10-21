@@ -1,21 +1,19 @@
 
-
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
 import { Activity, CorrelatedResource } from '../types';
-// FIX: Replaced unsupported 'buttonLabel' and 'onButtonClick' props with a button passed as a child to PageHeader for consistency. This also required importing the PlusIcon.
 import { EditIcon, TrashIcon, PlusIcon } from '../components/icons';
 
 const Activities: React.FC = () => {
   const { activities, setActivities, tools, materials } = useContext(AppContext)!;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
-  const [formState, setFormState] = useState<Omit<Activity, 'id'>>({ name: '', description: '', tools: [], materials: [] });
+  const [formState, setFormState] = useState<Omit<Activity, 'id'>>({ name: '', description: '', sla: 0, tools: [], materials: [] });
 
   const openModal = (activity: Activity | null = null) => {
     setCurrentActivity(activity);
-    setFormState(activity ? { ...activity } : { name: '', description: '', tools: [], materials: [] });
+    setFormState(activity ? { ...activity } : { name: '', description: '', sla: 0, tools: [], materials: [] });
     setIsModalOpen(true);
   };
 
@@ -25,16 +23,23 @@ const Activities: React.FC = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    setFormState(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
   };
   
   const addResource = (type: 'tools' | 'materials') => {
-      const resourceId = (document.getElementById(`select-${type}`) as HTMLSelectElement).value;
-      if (!resourceId || formState[type].some(r => r.resourceId === resourceId)) return;
+      const selectElement = document.getElementById(`select-${type}`) as HTMLSelectElement;
+      if (!selectElement) return;
+
+      const resourceId = selectElement.value;
+      if (!resourceId || formState[type].some(r => r.resourceId === resourceId)) {
+        selectElement.value = "";
+        return;
+      };
       
       const newResource: CorrelatedResource = { resourceId, quantity: 1 };
       setFormState(prev => ({ ...prev, [type]: [...prev[type], newResource] }));
+      selectElement.value = "";
   };
 
   const updateResourceQuantity = (type: 'tools' | 'materials', resourceId: string, quantity: number) => {
@@ -67,47 +72,53 @@ const Activities: React.FC = () => {
 
   const renderResourceList = (type: 'tools' | 'materials') => {
     const resourceList = type === 'tools' ? tools : materials;
+    const title = type === 'tools' ? 'Equipamentos' : 'Materiais';
     return (
-        <div>
-            <h4 className="font-semibold text-gray-700 mt-4 mb-2">{type === 'tools' ? 'Equipamentos' : 'Materiais'}</h4>
-            <div className="flex space-x-2">
-                <select id={`select-${type}`} className="w-full p-2 border rounded">
-                    <option value="">Selecione um item...</option>
-                    {resourceList.map(item => <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>)}
-                </select>
-                <button type="button" onClick={() => addResource(type)} className="px-4 py-2 bg-gray-200 rounded">Adicionar</button>
+        <div className="mt-6">
+            <h4 className="text-lg font-medium leading-6 text-gray-900">{title}</h4>
+            <div className="mt-4">
+              <label htmlFor={`select-${type}`} className="sr-only">Adicionar {title}</label>
+              <div className="flex items-stretch space-x-2">
+                  <select id={`select-${type}`} className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
+                      <option value="">Selecione para adicionar...</option>
+                      {resourceList.map(item => <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>)}
+                  </select>
+                  <button type="button" onClick={() => addResource(type)} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 whitespace-nowrap">Adicionar</button>
+              </div>
             </div>
-            <ul className="mt-2 space-y-2">
-                {formState[type].map(correlated => {
+            <div className="mt-4 space-y-3 max-h-48 overflow-y-auto pr-2">
+                {formState[type].length > 0 ? formState[type].map(correlated => {
                     const resource = resourceList.find(r => r.id === correlated.resourceId);
                     if (!resource) return null;
                     return (
-                        <li key={correlated.resourceId} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                            <span>{resource.name}</span>
-                            <div className="flex items-center space-x-2">
+                        <div key={correlated.resourceId} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                            <span className="text-sm font-medium text-gray-800">{resource.name}</span>
+                            <div className="flex items-center space-x-3">
                                 <input 
                                     type="number" 
+                                    aria-label={`Quantidade de ${resource.name}`}
                                     value={correlated.quantity}
                                     onChange={(e) => updateResourceQuantity(type, correlated.resourceId, parseInt(e.target.value))}
-                                    className="w-20 p-1 border rounded"
+                                    className="block w-20 rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
                                     min="1"
                                 />
-                                <span className="text-sm text-gray-500">{resource.unit}</span>
-                                <button type="button" onClick={() => removeResource(type, correlated.resourceId)} className="text-red-500 hover:text-red-700">
-                                    <TrashIcon className="w-4 h-4" />
+                                <span className="text-sm text-gray-500 min-w-[30px]">{resource.unit}</span>
+                                <button type="button" onClick={() => removeResource(type, correlated.resourceId)} className="text-red-500 hover:text-red-700" aria-label={`Remover ${resource.name}`}>
+                                    <TrashIcon className="w-5 h-5" />
                                 </button>
                             </div>
-                        </li>
+                        </div>
                     )
-                })}
-            </ul>
+                }) : (
+                  <div className="text-center py-4 text-sm text-gray-500">Nenhum {title.toLowerCase()} adicionado.</div>
+                )}
+            </div>
         </div>
     );
   }
 
   return (
     <div className="p-8">
-      {/* FIX: Replaced unsupported 'buttonLabel' and 'onButtonClick' props with a button passed as a child to PageHeader for consistency. */}
       <PageHeader title="Atividades">
         <button
           onClick={() => openModal()}
@@ -123,6 +134,7 @@ const Activities: React.FC = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SLA (min)</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recursos</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
             </tr>
@@ -132,17 +144,20 @@ const Activities: React.FC = () => {
               <tr key={activity.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{activity.name}</td>
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-sm truncate">{activity.description}</td>
+                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.sla}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {activity.tools.length} Equip. / {activity.materials.length} Mat.
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => openModal(activity)} className="text-primary-600 hover:text-primary-900 mr-4"><EditIcon className="w-5 h-5"/></button>
-                  <button onClick={() => handleDelete(activity.id)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5"/></button>
+                  <div className="flex justify-end items-center space-x-2">
+                    <button onClick={() => openModal(activity)} className="text-primary-600 hover:text-primary-900"><EditIcon className="w-5 h-5"/></button>
+                    <button onClick={() => handleDelete(activity.id)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5"/></button>
+                  </div>
                 </td>
               </tr>
             )) : (
                 <tr>
-                    <td colSpan={4} className="text-center py-10 text-gray-500">Nenhuma atividade cadastrada.</td>
+                    <td colSpan={5} className="text-center py-10 text-gray-500">Nenhuma atividade cadastrada.</td>
                 </tr>
             )}
           </tbody>
@@ -150,20 +165,41 @@ const Activities: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">{currentActivity ? 'Editar Atividade' : 'Nova Atividade'}</h3>
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-6">{currentActivity ? 'Editar Atividade' : 'Nova Atividade'}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <input type="text" name="name" value={formState.name} onChange={handleInputChange} placeholder="Nome da Atividade" className="w-full p-2 border rounded" required />
-                <textarea name="description" value={formState.description} onChange={handleInputChange} placeholder="Descrição" className="w-full p-2 border rounded" rows={3}></textarea>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                   <div className="md:col-span-2">
+                      <label htmlFor="name" className="block text-sm font-medium leading-6 text-gray-900">Nome da Atividade</label>
+                      <div className="mt-2">
+                        <input type="text" name="name" id="name" value={formState.name} onChange={handleInputChange} placeholder="Ex: Limpeza de Vidros" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                      </div>
+                    </div>
+                    <div>
+                        <label htmlFor="sla" className="block text-sm font-medium leading-6 text-gray-900">SLA (minutos)</label>
+                        <div className="mt-2">
+                           <input type="number" name="sla" id="sla" value={formState.sla} onChange={handleInputChange} placeholder="Ex: 60" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium leading-6 text-gray-900">Descrição</label>
+                  <div className="mt-2">
+                    <textarea name="description" id="description" value={formState.description} onChange={handleInputChange} placeholder="Detalhes sobre a atividade..." className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" rows={3}></textarea>
+                  </div>
+                </div>
                 
-                {renderResourceList('tools')}
-                {renderResourceList('materials')}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 pt-2">
+                  {renderResourceList('tools')}
+                  {renderResourceList('materials')}
+                </div>
               </div>
-              <div className="mt-6 flex justify-end space-x-4">
-                <button type="button" onClick={closeModal} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
-                <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded">Salvar</button>
+              <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4">
+                <button type="button" onClick={closeModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Salvar</button>
               </div>
             </form>
           </div>
