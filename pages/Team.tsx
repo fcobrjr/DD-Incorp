@@ -67,8 +67,10 @@ const Team: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{member.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.role}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => openModal(member)} className="text-primary-600 hover:text-primary-900 mr-4"><EditIcon className="w-5 h-5"/></button>
-                  <button onClick={() => handleDelete(member.id)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5"/></button>
+                  <div className="flex justify-end items-center space-x-1">
+                    <button onClick={() => openModal(member)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors"><EditIcon className="w-5 h-5"/></button>
+                    <button onClick={() => handleDelete(member.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                  </div>
                 </td>
               </tr>
             )) : (

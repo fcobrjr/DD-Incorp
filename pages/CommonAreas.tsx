@@ -1,15 +1,14 @@
-
 import React, { useState, useContext, useRef, useMemo } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
 import { CommonArea, Activity } from '../types';
-import { EditIcon, TrashIcon, SparklesIcon, EyeIcon, DownloadIcon, UploadIcon, PlusIcon } from '../components/icons';
+import { EditIcon, TrashIcon, SparklesIcon, EyeIcon, DownloadIcon, UploadIcon, PlusIcon, FilterIcon } from '../components/icons';
 import { suggestActivitiesForEnvironment } from '../services/geminiService';
 
 declare var XLSX: any;
 
 const CommonAreas: React.FC = () => {
-  const { commonAreas, setCommonAreas, activities, setActivities, workPlans, teamMembers } = useContext(AppContext)!;
+  const { commonAreas, setCommonAreas, activities, setActivities, workPlans } = useContext(AppContext)!;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<CommonArea | null>(null);
@@ -18,6 +17,14 @@ const CommonAreas: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    client: '',
+    location: '',
+    subLocation: '',
+    environment: '',
+  });
 
 
   const openModal = (item: CommonArea | null = null) => {
@@ -140,7 +147,7 @@ const CommonAreas: React.FC = () => {
       reader.readAsBinaryString(file);
       e.target.value = '';
   };
-
+  
   const plannedActivitiesDetails = useMemo(() => {
     if (!currentItem) return [];
     return workPlans
@@ -148,16 +155,72 @@ const CommonAreas: React.FC = () => {
         .flatMap(plan => 
             plan.plannedActivities.map(pa => {
                 const activity = activities.find(a => a.id === pa.activityId);
-                const member = teamMembers.find(t => t.id === pa.assignedTeamMemberId);
                 return {
-                    planDate: new Date(plan.date).toLocaleDateString(),
+                    periodicity: pa.periodicity,
                     activityName: activity?.name || 'Atividade desconhecida',
-                    memberName: member?.name || 'Não atribuído',
                     id: pa.id
                 };
             })
         );
-}, [workPlans, activities, teamMembers, currentItem]);
+}, [workPlans, activities, currentItem]);
+
+const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => {
+        const newFilters = { ...prev, [name]: value };
+        // Reset dependent filters when a parent filter changes
+        if (name === 'client') {
+            newFilters.location = '';
+            newFilters.subLocation = '';
+            newFilters.environment = '';
+        }
+        if (name === 'location') {
+            newFilters.subLocation = '';
+            newFilters.environment = '';
+        }
+        if (name === 'subLocation') {
+            newFilters.environment = '';
+        }
+        return newFilters;
+    });
+};
+
+const clearFilters = () => {
+    setFilters({
+        client: '',
+        location: '',
+        subLocation: '',
+        environment: '',
+    });
+};
+
+const uniqueClients = useMemo(() => [...new Set(commonAreas.map(a => a.client).filter(Boolean))].sort(), [commonAreas]);
+    
+const uniqueLocations = useMemo(() => {
+    if (!filters.client) return [];
+    return [...new Set(commonAreas.filter(a => a.client === filters.client).map(a => a.location).filter(Boolean))].sort();
+}, [commonAreas, filters.client]);
+    
+const uniqueSubLocations = useMemo(() => {
+    if (!filters.client || !filters.location) return [];
+    return [...new Set(commonAreas.filter(a => a.client === filters.client && a.location === filters.location).map(a => a.subLocation).filter(Boolean))].sort();
+}, [commonAreas, filters.client, filters.location]);
+
+const uniqueEnvironments = useMemo(() => {
+    if (!filters.client || !filters.location || !filters.subLocation) return [];
+    return [...new Set(commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).map(a => a.environment).filter(Boolean))].sort();
+}, [commonAreas, filters.client, filters.location, filters.subLocation]);
+
+
+const filteredCommonAreas = useMemo(() => {
+    return commonAreas.filter(area => {
+        if (filters.client && area.client !== filters.client) return false;
+        if (filters.location && area.location !== filters.location) return false;
+        if (filters.subLocation && area.subLocation !== filters.subLocation) return false;
+        if (filters.environment && area.environment !== filters.environment) return false;
+        return true;
+    });
+}, [commonAreas, filters]);
 
 
   return (
@@ -186,6 +249,54 @@ const CommonAreas: React.FC = () => {
             Nova Área Comum
         </button>
       </PageHeader>
+      
+      <div className="mb-6">
+        <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
+        >
+            <FilterIcon className="w-5 h-5 mr-2" />
+            {showFilters ? 'Ocultar Filtros Avançados' : 'Mostrar Filtros Avançados'}
+        </button>
+        {showFilters && (
+            <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label htmlFor="client" className="block text-sm font-medium text-gray-700">Cliente</label>
+                        <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
+                            <option value="">Todos</option>
+                            {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="location" className="block text-sm font-medium text-gray-700">Local</label>
+                        <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
+                            <option value="">Todos</option>
+                            {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="subLocation" className="block text-sm font-medium text-gray-700">Sublocal</label>
+                        <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
+                            <option value="">Todos</option>
+                            {uniqueSubLocations.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="environment" className="block text-sm font-medium text-gray-700">Ambiente</label>
+                        <select name="environment" id="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
+                            <option value="">Todos</option>
+                            {uniqueEnvironments.map(env => <option key={env} value={env}>{env}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                    <button onClick={clearFilters} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Limpar Filtros</button>
+                </div>
+            </div>
+        )}
+      </div>
+
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -199,7 +310,7 @@ const CommonAreas: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {commonAreas.length > 0 ? commonAreas.map(area => (
+            {filteredCommonAreas.length > 0 ? filteredCommonAreas.map(area => (
               <tr key={area.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{area.client}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.location}</td>
@@ -207,14 +318,14 @@ const CommonAreas: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.environment}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.area}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end items-center space-x-2">
-                    <button onClick={() => openPreview(area)} className="text-blue-600 hover:text-blue-900" aria-label={`Preview ${area.client}`}>
+                  <div className="flex justify-end items-center space-x-1">
+                    <button onClick={() => openPreview(area)} className="p-2 rounded-full text-blue-600 hover:bg-blue-100 transition-colors" aria-label={`Visualizar ${area.client}`}>
                       <EyeIcon className="w-5 h-5"/>
                     </button>
-                    <button onClick={() => openModal(area)} className="text-primary-600 hover:text-primary-900" aria-label={`Edit ${area.client}`}>
+                    <button onClick={() => openModal(area)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label={`Editar ${area.client}`}>
                       <EditIcon className="w-5 h-5"/>
                     </button>
-                    <button onClick={() => handleDelete(area.id)} className="text-red-600 hover:text-red-900" aria-label={`Delete ${area.client}`}>
+                    <button onClick={() => handleDelete(area.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors" aria-label={`Excluir ${area.client}`}>
                       <TrashIcon className="w-5 h-5"/>
                     </button>
                   </div>
@@ -222,7 +333,9 @@ const CommonAreas: React.FC = () => {
               </tr>
             )) : (
                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-500">Nenhuma área comum cadastrada.</td>
+                    <td colSpan={6} className="text-center py-10 text-gray-500">
+                        {commonAreas.length > 0 ? 'Nenhuma área comum encontrada com os filtros atuais.' : 'Nenhuma área comum cadastrada.'}
+                    </td>
                 </tr>
             )}
           </tbody>
@@ -308,7 +421,7 @@ const CommonAreas: React.FC = () => {
           <div className="bg-white rounded-lg p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start">
               <h3 id="preview-title" className="text-2xl font-bold mb-4 text-primary-700">{`${currentItem.client} - ${currentItem.environment}`}</h3>
-              <button onClick={closePreview} className="text-gray-500 hover:text-gray-800 text-3xl leading-none" aria-label="Close preview">&times;</button>
+              <button onClick={closePreview} className="text-gray-500 hover:text-gray-800 text-3xl leading-none" aria-label="Fechar visualização">&times;</button>
             </div>
             
             <div className="mb-6 border-b pb-4">
@@ -343,21 +456,19 @@ const CommonAreas: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data do Plano</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Membro da Equipe</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {plannedActivitiesDetails.length > 0 ? plannedActivitiesDetails.map(detail => (
                             <tr key={detail.id}>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{detail.planDate}</td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">{detail.activityName}</td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{detail.memberName}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{detail.periodicity}</td>
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={3} className="text-center py-6 text-gray-500">Nenhuma atividade planejada para esta área.</td>
+                                <td colSpan={2} className="text-center py-6 text-gray-500">Nenhuma atividade planejada para esta área.</td>
                             </tr>
                         )}
                     </tbody>
@@ -366,7 +477,7 @@ const CommonAreas: React.FC = () => {
 
 
             <div className="mt-6 flex justify-end">
-              <button onClick={closePreview} className="px-4 py-2 bg-gray-200 rounded">Fechar</button>
+              <button onClick={closePreview} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Fechar</button>
             </div>
           </div>
         </div>

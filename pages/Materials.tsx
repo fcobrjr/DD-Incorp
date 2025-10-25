@@ -9,11 +9,11 @@ const Materials: React.FC = () => {
   const { materials, setMaterials } = useContext(AppContext)!;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<Resource | null>(null);
-  const [formState, setFormState] = useState<Omit<Resource, 'id'>>({ name: '', unit: '' });
+  const [formState, setFormState] = useState<Omit<Resource, 'id'>>({ name: '', unit: '', coefficientM2: 0 });
 
   const openModal = (item: Resource | null = null) => {
     setCurrentItem(item);
-    setFormState(item ? { ...item } : { name: '', unit: '' });
+    setFormState(item ? { ...item } : { name: '', unit: '', coefficientM2: 0 });
     setIsModalOpen(true);
   };
 
@@ -23,8 +23,8 @@ const Materials: React.FC = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    setFormState(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -58,6 +58,7 @@ const Materials: React.FC = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidade</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coeficiente / m²</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
@@ -66,14 +67,17 @@ const Materials: React.FC = () => {
               <tr key={material.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{material.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{material.unit}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{material.coefficientM2 || 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => openModal(material)} className="text-primary-600 hover:text-primary-900 mr-4"><EditIcon className="w-5 h-5"/></button>
-                  <button onClick={() => handleDelete(material.id)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5"/></button>
+                  <div className="flex justify-end items-center space-x-1">
+                    <button onClick={() => openModal(material)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors"><EditIcon className="w-5 h-5"/></button>
+                    <button onClick={() => handleDelete(material.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                  </div>
                 </td>
               </tr>
             )) : (
                 <tr>
-                    <td colSpan={3} className="text-center py-10 text-gray-500">Nenhum material cadastrado.</td>
+                    <td colSpan={4} className="text-center py-10 text-gray-500">Nenhum material cadastrado.</td>
                 </tr>
             )}
           </tbody>
@@ -92,11 +96,19 @@ const Materials: React.FC = () => {
                     <input type="text" id="name" name="name" value={formState.name} onChange={handleInputChange} placeholder="Ex: Detergente" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
                   </div>
                 </div>
-                <div>
-                  <label htmlFor="unit" className="block text-sm font-medium leading-6 text-gray-900">Unidade</label>
-                  <div className="mt-2">
-                    <input type="text" id="unit" name="unit" value={formState.unit} onChange={handleInputChange} placeholder="Ex: ml, L, kg, un" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="unit" className="block text-sm font-medium leading-6 text-gray-900">Unidade</label>
+                      <div className="mt-2">
+                        <input type="text" id="unit" name="unit" value={formState.unit} onChange={handleInputChange} placeholder="Ex: ml, L, kg, un" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                      </div>
+                    </div>
+                     <div>
+                      <label htmlFor="coefficientM2" className="block text-sm font-medium leading-6 text-gray-900">Coeficiente / m²</label>
+                      <div className="mt-2">
+                        <input type="number" id="coefficientM2" name="coefficientM2" value={formState.coefficientM2} onChange={handleInputChange} placeholder="Ex: 0.05" step="0.001" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
+                      </div>
+                    </div>
                 </div>
               </div>
               <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4">

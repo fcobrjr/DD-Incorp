@@ -1,3 +1,5 @@
+// FIX: Import Dispatch and SetStateAction from 'react' to resolve type errors.
+import type { Dispatch, SetStateAction } from 'react';
 
 export interface BaseItem {
   id: string;
@@ -6,6 +8,7 @@ export interface BaseItem {
 
 export interface Resource extends BaseItem {
   unit: string; // e.g., 'unit', 'ml', 'g', 'box'
+  coefficientM2?: number; // Amount of the unit per square meter
 }
 
 export interface CorrelatedResource {
@@ -33,31 +36,44 @@ export interface TeamMember extends BaseItem {
   role: string;
 }
 
+export type Periodicity = 'Diário' | 'Semanal' | 'Quinzenal' | 'Mensal' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anual';
+
 export interface PlannedActivity {
   id: string;
   activityId: string;
-  assignedTeamMemberId?: string;
+  periodicity: Periodicity;
 }
 
 export interface WorkPlan {
   id: string;
   commonAreaId: string;
-  date: string;
   plannedActivities: PlannedActivity[];
 }
+
+export interface ScheduledActivity {
+  id: string;
+  workPlanId: string;
+  plannedActivityId: string;
+  plannedDate: string; // ISO date string 'YYYY-MM-DD'
+  executionDate: string | null; // ISO date string 'YYYY-MM-DD'
+  operatorId?: string;
+}
+
 
 // Context Types
 export interface AppContextType {
   commonAreas: CommonArea[];
-  setCommonAreas: React.Dispatch<React.SetStateAction<CommonArea[]>>;
+  setCommonAreas: Dispatch<SetStateAction<CommonArea[]>>;
   activities: Activity[];
-  setActivities: React.Dispatch<React.SetStateAction<Activity[]>>;
+  setActivities: Dispatch<SetStateAction<Activity[]>>;
   tools: Resource[];
-  setTools: React.Dispatch<React.SetStateAction<Resource[]>>;
+  setTools: Dispatch<SetStateAction<Resource[]>>;
   materials: Resource[];
-  setMaterials: React.Dispatch<React.SetStateAction<Resource[]>>;
+  setMaterials: Dispatch<SetStateAction<Resource[]>>;
   teamMembers: TeamMember[];
-  setTeamMembers: React.Dispatch<React.SetStateAction<TeamMember[]>>;
+  setTeamMembers: Dispatch<SetStateAction<TeamMember[]>>;
   workPlans: WorkPlan[];
-  setWorkPlans: React.Dispatch<React.SetStateAction<WorkPlan[]>>;
+  setWorkPlans: Dispatch<SetStateAction<WorkPlan[]>>;
+  scheduledActivities: ScheduledActivity[];
+  setScheduledActivities: Dispatch<SetStateAction<ScheduledActivity[]>>;
 }

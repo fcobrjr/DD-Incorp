@@ -1,4 +1,4 @@
-import { Resource, TeamMember, CommonArea, Activity, WorkPlan } from '../types';
+import { Resource, TeamMember, CommonArea, Activity, WorkPlan, ScheduledActivity } from '../types';
 
 // --- BASE RESOURCES ---
 export const SAMPLE_TOOLS: Resource[] = [
@@ -9,10 +9,10 @@ export const SAMPLE_TOOLS: Resource[] = [
 ];
 
 export const SAMPLE_MATERIALS: Resource[] = [
-  { id: 'mat-1', name: 'Limpador Multiuso', unit: 'L' },
-  { id: 'mat-2', name: 'Desinfetante Hospitalar', unit: 'L' },
-  { id: 'mat-3', name: 'Pano de Microfibra', unit: 'un' },
-  { id: 'mat-4', name: 'Saco de Lixo 100L', unit: 'un' },
+  { id: 'mat-1', name: 'Limpador Multiuso', unit: 'L', coefficientM2: 0.05 },
+  { id: 'mat-2', name: 'Desinfetante Hospitalar', unit: 'L', coefficientM2: 0.02 },
+  { id: 'mat-3', name: 'Pano de Microfibra', unit: 'un', coefficientM2: 0 },
+  { id: 'mat-4', name: 'Saco de Lixo 100L', unit: 'un', coefficientM2: 0 },
 ];
 
 // FIX: Corrected typo in variable name.
@@ -86,43 +86,65 @@ export const SAMPLE_ACTIVITIES: Activity[] = [
 ];
 
 // --- PLANNING ---
-const today = new Date();
-const tomorrow = new Date();
-tomorrow.setDate(today.getDate() + 1);
-
 export const SAMPLE_WORK_PLANS: WorkPlan[] = [
   {
     id: 'plan-1',
     commonAreaId: 'area-1', // Grand Hotel Central Lobby
-    date: today.toISOString(),
     plannedActivities: [
       {
         id: 'pa-1',
         activityId: 'act-1', // Limpeza de Piso
-        assignedTeamMemberId: 'team-1', // João da Silva
+        periodicity: 'Diário',
       },
       {
         id: 'pa-2',
         activityId: 'act-3', // Limpeza de Vidros
-        assignedTeamMemberId: 'team-3', // Carlos Pereira
+        periodicity: 'Semanal',
       },
     ],
   },
   {
     id: 'plan-2',
     commonAreaId: 'area-2', // TechCorp Cozinha
-    date: tomorrow.toISOString(),
     plannedActivities: [
         {
             id: 'pa-3',
             activityId: 'act-2', // Higienização de Superfícies
-            assignedTeamMemberId: 'team-1' // João da Silva
+            periodicity: 'Diário'
         },
         {
             id: 'pa-4',
             activityId: 'act-4', // Recolhimento de lixo
-            assignedTeamMemberId: 'team-1' // João da Silva
+            periodicity: 'Diário'
         }
     ]
   }
+];
+
+// --- SCHEDULING ---
+export const SAMPLE_SCHEDULED_ACTIVITIES: ScheduledActivity[] = [
+    {
+        id: 'sa-1',
+        workPlanId: 'plan-1',
+        plannedActivityId: 'pa-1',
+        plannedDate: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0], // Yesterday
+        executionDate: null,
+        operatorId: 'team-1',
+    },
+    {
+        id: 'sa-2',
+        workPlanId: 'plan-2',
+        plannedActivityId: 'pa-3',
+        plannedDate: new Date().toISOString().split('T')[0], // Today
+        executionDate: null,
+        operatorId: 'team-3',
+    },
+     {
+        id: 'sa-3',
+        workPlanId: 'plan-2',
+        plannedActivityId: 'pa-4',
+        plannedDate: new Date().toISOString().split('T')[0], // Today
+        executionDate: new Date().toISOString().split('T')[0], // Completed Today
+        operatorId: 'team-3',
+    }
 ];

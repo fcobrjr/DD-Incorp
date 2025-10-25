@@ -1,4 +1,3 @@
-
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
@@ -37,7 +36,15 @@ const Activities: React.FC = () => {
         return;
       };
       
-      const newResource: CorrelatedResource = { resourceId, quantity: 1 };
+      let quantity = 1;
+      if (type === 'materials') {
+        const material = materials.find(m => m.id === resourceId);
+        if (material?.coefficientM2 && material.coefficientM2 > 0) {
+          quantity = material.coefficientM2;
+        }
+      }
+
+      const newResource: CorrelatedResource = { resourceId, quantity };
       setFormState(prev => ({ ...prev, [type]: [...prev[type], newResource] }));
       selectElement.value = "";
   };
@@ -45,7 +52,7 @@ const Activities: React.FC = () => {
   const updateResourceQuantity = (type: 'tools' | 'materials', resourceId: string, quantity: number) => {
       setFormState(prev => ({
           ...prev,
-          [type]: prev[type].map(r => r.resourceId === resourceId ? { ...r, quantity: quantity < 1 ? 1 : quantity } : r)
+          [type]: prev[type].map(r => r.resourceId === resourceId ? { ...r, quantity: quantity < 0 ? 0 : quantity } : r)
       }));
   };
 
@@ -90,20 +97,25 @@ const Activities: React.FC = () => {
                 {formState[type].length > 0 ? formState[type].map(correlated => {
                     const resource = resourceList.find(r => r.id === correlated.resourceId);
                     if (!resource) return null;
+                    const isCoefficient = type === 'materials' && resource.coefficientM2 && resource.coefficientM2 > 0;
                     return (
                         <div key={correlated.resourceId} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                            <span className="text-sm font-medium text-gray-800">{resource.name}</span>
+                            <div>
+                                <span className="text-sm font-medium text-gray-800">{resource.name}</span>
+                                {isCoefficient && <span className="text-xs text-blue-600 block">Coeficiente / m²</span>}
+                            </div>
                             <div className="flex items-center space-x-3">
                                 <input 
                                     type="number" 
                                     aria-label={`Quantidade de ${resource.name}`}
                                     value={correlated.quantity}
-                                    onChange={(e) => updateResourceQuantity(type, correlated.resourceId, parseInt(e.target.value))}
-                                    className="block w-20 rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-                                    min="1"
+                                    onChange={(e) => updateResourceQuantity(type, correlated.resourceId, parseFloat(e.target.value))}
+                                    className="block w-24 rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+                                    min="0"
+                                    step="0.001"
                                 />
                                 <span className="text-sm text-gray-500 min-w-[30px]">{resource.unit}</span>
-                                <button type="button" onClick={() => removeResource(type, correlated.resourceId)} className="text-red-500 hover:text-red-700" aria-label={`Remover ${resource.name}`}>
+                                <button type="button" onClick={() => removeResource(type, correlated.resourceId)} className="p-1 rounded-full text-red-500 hover:bg-red-100 transition-colors" aria-label={`Remover ${resource.name}`}>
                                     <TrashIcon className="w-5 h-5" />
                                 </button>
                             </div>
@@ -149,9 +161,9 @@ const Activities: React.FC = () => {
                     {activity.tools.length} Equip. / {activity.materials.length} Mat.
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end items-center space-x-2">
-                    <button onClick={() => openModal(activity)} className="text-primary-600 hover:text-primary-900"><EditIcon className="w-5 h-5"/></button>
-                    <button onClick={() => handleDelete(activity.id)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5"/></button>
+                  <div className="flex justify-end items-center space-x-1">
+                    <button onClick={() => openModal(activity)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors"><EditIcon className="w-5 h-5"/></button>
+                    <button onClick={() => handleDelete(activity.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors"><TrashIcon className="w-5 h-5"/></button>
                   </div>
                 </td>
               </tr>

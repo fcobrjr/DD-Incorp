@@ -67,8 +67,10 @@ const Tools: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tool.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tool.unit}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => openModal(tool)} className="text-primary-600 hover:text-primary-900 mr-4"><EditIcon className="w-5 h-5"/></button>
-                  <button onClick={() => handleDelete(tool.id)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5"/></button>
+                  <div className="flex justify-end items-center space-x-1">
+                    <button onClick={() => openModal(tool)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors"><EditIcon className="w-5 h-5"/></button>
+                    <button onClick={() => handleDelete(tool.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                  </div>
                 </td>
               </tr>
             )) : (

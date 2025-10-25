@@ -8,7 +8,7 @@ export const suggestActivitiesForEnvironment = async (environment: string): Prom
     }
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    const prompt = `You are a facility management expert. Suggest a list of common cleaning and maintenance activities for a "${environment}". Respond with only a JSON array of strings, where each string is a short, actionable activity name. For example: ["Clean floors", "Wipe windows", "Disinfect surfaces"]. Do not include any other text or explanation.`;
+    const prompt = `Você é um especialista em gestão de facilities. Sugira uma lista de atividades comuns de limpeza e manutenção para um(a) "${environment}". Responda apenas com um array JSON de strings, onde cada string é um nome de atividade curto e acionável. Por exemplo: ["Limpar pisos", "Limpar janelas", "Desinfetar superfícies"]. Não inclua nenhum outro texto ou explicação.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -19,7 +19,7 @@ export const suggestActivitiesForEnvironment = async (environment: string): Prom
           type: Type.ARRAY,
           items: {
             type: Type.STRING,
-            description: 'A cleaning or maintenance activity.',
+            description: 'Uma atividade de limpeza ou manutenção.',
           },
         },
       },
