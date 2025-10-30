@@ -99,7 +99,7 @@ const Planning: React.FC = () => {
     // --- Main Planning Modal Logic ---
     const openModal = (plan: WorkPlan | null = null) => {
         setCurrentPlan(plan);
-        setFormState(plan ? JSON.parse(JSON.stringify(plan)) : {
+        setFormState(plan ? { ...JSON.parse(JSON.stringify(plan)), plannedActivities: plan.plannedActivities || [] } : {
             id: Date.now().toString(),
             commonAreaId: '',
             plannedActivities: [],
@@ -120,7 +120,7 @@ const Planning: React.FC = () => {
             if (existingPlan) {
                 alert("Já existe um plano para esta Área Comum. Editando o plano existente.");
                 setCurrentPlan(existingPlan);
-                setFormState(JSON.parse(JSON.stringify(existingPlan)));
+                setFormState({ ...JSON.parse(JSON.stringify(existingPlan)), plannedActivities: existingPlan.plannedActivities || [] });
                 return;
             }
         }
@@ -128,24 +128,24 @@ const Planning: React.FC = () => {
     };
     
     const addActivityToPlan = (activityId: string) => {
-        if (!formState || !activityId || formState.plannedActivities.some(p => p.activityId === activityId)) return;
+        if (!formState || !activityId || (formState.plannedActivities || []).some(p => p.activityId === activityId)) return;
         
         const newPlannedActivity: PlannedActivity = {
             id: `${Date.now()}-${activityId}`,
             activityId,
             periodicity: 'Diário',
         };
-        setFormState(prev => prev ? { ...prev, plannedActivities: [...prev.plannedActivities, newPlannedActivity] } : null);
+        setFormState(prev => prev ? { ...prev, plannedActivities: [...(prev.plannedActivities || []), newPlannedActivity] } : null);
     };
 
     const removeActivityFromPlan = (plannedActivityId: string) => {
-        setFormState(prev => prev ? { ...prev, plannedActivities: prev.plannedActivities.filter(p => p.id !== plannedActivityId) } : null);
+        setFormState(prev => prev ? { ...prev, plannedActivities: (prev.plannedActivities || []).filter(p => p.id !== plannedActivityId) } : null);
     };
     
     const updateActivityPeriodicity = (plannedActivityId: string, periodicity: Periodicity) => {
         setFormState(prev => prev ? {
             ...prev,
-            plannedActivities: prev.plannedActivities.map(p => 
+            plannedActivities: (prev.plannedActivities || []).map(p => 
                 p.id === plannedActivityId ? { ...p, periodicity } : p
             )
         } : null);
@@ -180,7 +180,7 @@ const Planning: React.FC = () => {
         setActivities(prevActivities =>
             prevActivities.map(activity => {
                 if (activity.id === activityId) {
-                    const updatedMaterials = activity.materials.map(material => {
+                    const updatedMaterials = (activity.materials || []).map(material => {
                         if (material.resourceId === resourceId) {
                             return { ...material, quantity: newQuantity < 0 ? 0 : newQuantity };
                         }
@@ -196,7 +196,7 @@ const Planning: React.FC = () => {
     // --- Nested Activity Modal Logic ---
     const openActivityModal = (activity: Activity) => {
         setActivityToEdit(activity);
-        setActivityFormState({ ...activity });
+        setActivityFormState({ ...activity, tools: activity.tools || [], materials: activity.materials || [] });
         setIsActivityModalOpen(true);
     };
 
@@ -215,7 +215,7 @@ const Planning: React.FC = () => {
       if (!selectElement) return;
 
       const resourceId = selectElement.value;
-      if (!resourceId || activityFormState[type].some(r => r.resourceId === resourceId)) {
+      if (!resourceId || (activityFormState[type] || []).some(r => r.resourceId === resourceId)) {
         selectElement.value = "";
         return;
       };
@@ -229,21 +229,21 @@ const Planning: React.FC = () => {
       }
 
       const newResource: CorrelatedResource = { resourceId, quantity };
-      setActivityFormState(prev => ({ ...prev, [type]: [...prev[type], newResource] }));
+      setActivityFormState(prev => ({ ...prev, [type]: [...(prev[type] || []), newResource] }));
       selectElement.value = "";
     };
 
     const updateActivityResourceQuantity = (type: 'tools' | 'materials', resourceId: string, quantity: number) => {
         setActivityFormState(prev => ({
             ...prev,
-            [type]: prev[type].map(r => r.resourceId === resourceId ? { ...r, quantity: quantity < 0 ? 0 : quantity } : r)
+            [type]: (prev[type] || []).map(r => r.resourceId === resourceId ? { ...r, quantity: quantity < 0 ? 0 : quantity } : r)
         }));
     };
 
     const removeActivityResource = (type: 'tools' | 'materials', resourceId: string) => {
         setActivityFormState(prev => ({
             ...prev,
-            [type]: prev[type].filter(r => r.resourceId !== resourceId)
+            [type]: (prev[type] || []).filter(r => r.resourceId !== resourceId)
         }));
     };
 
@@ -271,7 +271,7 @@ const Planning: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-4 space-y-3 max-h-48 overflow-y-auto pr-2">
-                    {activityFormState[type].length > 0 ? activityFormState[type].map(correlated => {
+                    {(activityFormState[type] || []).length > 0 ? (activityFormState[type] || []).map(correlated => {
                         const resource = resourceList.find(r => r.id === correlated.resourceId);
                         if (!resource) return null;
                         const isCoefficient = type === 'materials' && resource.coefficientM2 && resource.coefficientM2 > 0;
@@ -317,14 +317,14 @@ const Planning: React.FC = () => {
         const currentArea = commonAreas.find(a => a.id === formState.commonAreaId);
         const areaSize = currentArea?.area || 0;
 
-        formState.plannedActivities.forEach(plannedActivity => {
+        (formState.plannedActivities || []).forEach(plannedActivity => {
             const activity = activities.find(a => a.id === plannedActivity.activityId);
             if (!activity) return;
 
-            activity.tools.forEach(tool => {
+            (activity.tools || []).forEach(tool => {
                 summary.tools.set(tool.resourceId, (summary.tools.get(tool.resourceId) || 0) + tool.quantity);
             });
-            activity.materials.forEach(material => {
+            (activity.materials || []).forEach(material => {
                 const materialDef = materials.find(m => m.id === material.resourceId);
                 let quantityToAdd = material.quantity;
                 
@@ -356,7 +356,7 @@ const Planning: React.FC = () => {
             if (filters.location && area.location !== filters.location) return false;
             if (filters.subLocation && area.subLocation !== filters.subLocation) return false;
             if (filters.environment && area.environment !== filters.environment) return false;
-            if (filters.activityId && !plan.plannedActivities.some(pa => pa.activityId === filters.activityId)) return false;
+            if (filters.activityId && !(plan.plannedActivities || []).some(pa => pa.activityId === filters.activityId)) return false;
             return true;
         });
     }, [workPlans, filters, commonAreas]);
@@ -365,7 +365,7 @@ const Planning: React.FC = () => {
     const flattenedActivities = useMemo(() => {
         return filteredWorkPlans
             .flatMap(plan =>
-                plan.plannedActivities.map(pa => {
+                (plan.plannedActivities || []).map(pa => {
                     const commonArea = commonAreas.find(ca => ca.id === plan.commonAreaId);
                     const activity = activities.find(a => a.id === pa.activityId);
                     return {
@@ -474,6 +474,7 @@ const Planning: React.FC = () => {
                     {filteredWorkPlans.length > 0 ? filteredWorkPlans.map((plan) => {
                         const area = commonAreas.find(a => a.id === plan.commonAreaId);
                         if (!area) return null;
+                        const plannedActivities = plan.plannedActivities || [];
                         
                         return (
                             <div key={plan.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
@@ -484,7 +485,7 @@ const Planning: React.FC = () => {
                                         <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mt-1">{area.environment}</p>
                                         <div className="mt-3 text-xs text-gray-600 space-x-4">
                                             <span className="bg-gray-100 rounded-full px-3 py-1 inline-block">
-                                                {plan.plannedActivities.length} {plan.plannedActivities.length === 1 ? 'atividade' : 'atividades'}
+                                                {plannedActivities.length} {plannedActivities.length === 1 ? 'atividade' : 'atividades'}
                                             </span>
                                         </div>
                                     </div>
@@ -499,7 +500,7 @@ const Planning: React.FC = () => {
                                 </div>
                                 
                                 <div className="p-3 space-y-2 bg-gray-50/75 flex-1 max-h-60 overflow-y-auto">
-                                    {plan.plannedActivities.length > 0 ? plan.plannedActivities.map(pa => {
+                                    {plannedActivities.length > 0 ? plannedActivities.map(pa => {
                                         const activity = activities.find(a => a.id === pa.activityId);
                                         return (
                                             <div key={pa.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200/80 shadow-sm">
@@ -593,7 +594,7 @@ const Planning: React.FC = () => {
                                         </div>
                                         
                                         <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                                            {formState.plannedActivities.length > 0 ? formState.plannedActivities.map(plannedAct => {
+                                            {(formState.plannedActivities || []).length > 0 ? formState.plannedActivities.map(plannedAct => {
                                                 const activity = activities.find(a => a.id === plannedAct.activityId);
                                                 return activity ? (
                                                     <div key={plannedAct.id} className="bg-gray-50 p-4 rounded-lg border">
@@ -613,7 +614,7 @@ const Planning: React.FC = () => {
                                                         </div>
                                                         
                                                         <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                                                            {activity.materials.length > 0 ? activity.materials.map(mat => {
+                                                            {(activity.materials || []).length > 0 ? (activity.materials || []).map(mat => {
                                                                 const materialDef = materials.find(m => m.id === mat.resourceId);
                                                                 const currentArea = commonAreas.find(a => a.id === formState.commonAreaId);
                                                                 const areaSize = currentArea?.area || 0;

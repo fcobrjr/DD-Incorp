@@ -133,7 +133,6 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({ selectedDate, onDateSel
         const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0=Sun
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        // FIX: Replaced JSX.Element with React.ReactElement to resolve "Cannot find namespace 'JSX'" error.
         const days: React.ReactElement[] = [];
         for (let i = 0; i < firstDayOfMonth; i++) {
             days.push(<div key={`pad-${i}`} />);
@@ -228,11 +227,14 @@ const Schedule: React.FC = () => {
         // Process scheduled activities
         scheduledActivities.forEach(sa => {
             const workPlan = workPlans.find(wp => wp.id === sa.workPlanId);
-            const plannedActivity = workPlan?.plannedActivities.find(pa => pa.id === sa.plannedActivityId);
-            if (!workPlan || !plannedActivity) return;
+            if (!workPlan) return;
+            
+            const plannedActivity = (workPlan.plannedActivities || []).find(pa => pa.id === sa.plannedActivityId);
+            if (!plannedActivity) return; // CRITICAL FIX: Skip if planned activity was deleted from work plan
             
             const activityDef = activities.find(a => a.id === plannedActivity.activityId);
             const commonArea = commonAreas.find(ca => ca.id === workPlan.commonAreaId);
+
             if(!activityDef || !commonArea) return;
 
             let status: Status;
@@ -245,6 +247,20 @@ const Schedule: React.FC = () => {
             } else {
                 status = 'Não Iniciada';
             }
+            
+            const enrichedTools = (activityDef.tools || [])
+                .map(t => {
+                    const toolDef = tools.find(res => res.id === t.resourceId);
+                    return toolDef ? { ...toolDef, quantity: t.quantity } : null;
+                })
+                .filter((t): t is Resource & { quantity: number } => t !== null);
+
+            const enrichedMaterials = (activityDef.materials || [])
+                .map(m => {
+                    const materialDef = materials.find(res => res.id === m.resourceId);
+                    return materialDef ? { ...materialDef, quantity: m.quantity } : null;
+                })
+                .filter((m): m is Resource & { quantity: number } => m !== null);
 
             enriched.push({
                 id: sa.id,
@@ -261,8 +277,8 @@ const Schedule: React.FC = () => {
                 activityDescription: activityDef.description,
                 periodicity: plannedActivity.periodicity,
                 sla: activityDef.sla,
-                tools: activityDef.tools.map(t => ({...tools.find(res => res.id === t.resourceId)!, quantity: t.quantity })),
-                materials: activityDef.materials.map(m => ({...materials.find(res => res.id === m.resourceId)!, quantity: m.quantity})),
+                tools: enrichedTools,
+                materials: enrichedMaterials,
                 original: sa,
                 workPlanId: workPlan.id,
             });
@@ -270,11 +286,28 @@ const Schedule: React.FC = () => {
 
         // Process unscheduled activities from work plans
         workPlans.forEach(wp => {
+            if (!wp.plannedActivities) return;
+
             wp.plannedActivities.forEach(pa => {
                 if (!scheduledIds.has(pa.id)) {
                     const activityDef = activities.find(a => a.id === pa.activityId);
                     const commonArea = commonAreas.find(ca => ca.id === wp.commonAreaId);
+
                     if (!activityDef || !commonArea) return;
+                    
+                    const enrichedTools = (activityDef.tools || [])
+                        .map(t => {
+                            const toolDef = tools.find(res => res.id === t.resourceId);
+                            return toolDef ? { ...toolDef, quantity: t.quantity } : null;
+                        })
+                        .filter((t): t is Resource & { quantity: number } => t !== null);
+        
+                    const enrichedMaterials = (activityDef.materials || [])
+                        .map(m => {
+                            const materialDef = materials.find(res => res.id === m.resourceId);
+                            return materialDef ? { ...materialDef, quantity: m.quantity } : null;
+                        })
+                        .filter((m): m is Resource & { quantity: number } => m !== null);
 
                      enriched.push({
                         id: pa.id,
@@ -290,8 +323,8 @@ const Schedule: React.FC = () => {
                         activityDescription: activityDef.description,
                         periodicity: pa.periodicity,
                         sla: activityDef.sla,
-                        tools: activityDef.tools.map(t => ({ ...tools.find(res => res.id === t.resourceId)!, quantity: t.quantity })),
-                        materials: activityDef.materials.map(m => ({ ...materials.find(res => res.id === m.resourceId)!, quantity: m.quantity })),
+                        tools: enrichedTools,
+                        materials: enrichedMaterials,
                         original: pa,
                         workPlanId: wp.id,
                     });
@@ -335,7 +368,7 @@ const Schedule: React.FC = () => {
         return [...new Set(commonAreas.filter(a => a.client === filters.client && a.location === filters.location).map(a => a.subLocation).filter(Boolean))].sort();
     }, [commonAreas, filters.client, filters.location]);
     const uniqueEnvironments = useMemo(() => {
-        if (!filters.client || !filters.location) return [];
+        if (!filters.client || !filters.location || !filters.subLocation) return [];
         return [...new Set(commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).map(a => a.environment).filter(Boolean))].sort();
     }, [commonAreas, filters.client, filters.location, filters.subLocation]);
 
@@ -392,6 +425,7 @@ const Schedule: React.FC = () => {
         today.setHours(0,0,0,0);
         
         workPlans.forEach(wp => {
+            if (!wp.plannedActivities) return;
             wp.plannedActivities.forEach(pa => {
                 let lastExecution: ScheduledActivity | undefined = scheduledActivities
                     .filter(sa => sa.plannedActivityId === pa.id && sa.executionDate)
@@ -431,7 +465,7 @@ const Schedule: React.FC = () => {
     };
     
     const handleRegisterExecution = () => {
-        if (!selectedActivity) return;
+        if (!selectedActivity || !selectedActivity.plannedDate) return;
         const originalId = selectedActivity.original.id;
         const todayISO = new Date().toISOString().split('T')[0];
 
@@ -439,11 +473,11 @@ const Schedule: React.FC = () => {
         setScheduledActivities(prev => prev.map(sa => sa.id === originalId ? {...sa, executionDate: todayISO} : sa));
 
         // Generate next occurrence
-        const nextDate = getNextDate(new Date(selectedActivity.plannedDate!), selectedActivity.periodicity);
+        const nextDate = getNextDate(new Date(selectedActivity.plannedDate), selectedActivity.periodicity);
         const nextDateISO = nextDate.toISOString().split('T')[0];
         
         const newScheduled: ScheduledActivity = {
-            id: `sa-${selectedActivity.workPlanId}-${selectedActivity.original.id}-${nextDateISO}`,
+            id: `sa-${selectedActivity.workPlanId}-${(selectedActivity.original as ScheduledActivity).plannedActivityId}-${nextDateISO}`,
             workPlanId: selectedActivity.workPlanId,
             plannedActivityId: (selectedActivity.original as ScheduledActivity).plannedActivityId,
             plannedDate: nextDateISO,

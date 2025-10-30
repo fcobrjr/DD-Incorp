@@ -12,7 +12,10 @@ const Activities: React.FC = () => {
 
   const openModal = (activity: Activity | null = null) => {
     setCurrentActivity(activity);
-    setFormState(activity ? { ...activity } : { name: '', description: '', sla: 0, tools: [], materials: [] });
+    setFormState(activity 
+        ? { ...activity, tools: activity.tools || [], materials: activity.materials || [] } 
+        : { name: '', description: '', sla: 0, tools: [], materials: [] }
+    );
     setIsModalOpen(true);
   };
 
@@ -31,7 +34,7 @@ const Activities: React.FC = () => {
       if (!selectElement) return;
 
       const resourceId = selectElement.value;
-      if (!resourceId || formState[type].some(r => r.resourceId === resourceId)) {
+      if (!resourceId || (formState[type] || []).some(r => r.resourceId === resourceId)) {
         selectElement.value = "";
         return;
       };
@@ -45,21 +48,21 @@ const Activities: React.FC = () => {
       }
 
       const newResource: CorrelatedResource = { resourceId, quantity };
-      setFormState(prev => ({ ...prev, [type]: [...prev[type], newResource] }));
+      setFormState(prev => ({ ...prev, [type]: [...(prev[type] || []), newResource] }));
       selectElement.value = "";
   };
 
   const updateResourceQuantity = (type: 'tools' | 'materials', resourceId: string, quantity: number) => {
       setFormState(prev => ({
           ...prev,
-          [type]: prev[type].map(r => r.resourceId === resourceId ? { ...r, quantity: quantity < 0 ? 0 : quantity } : r)
+          [type]: (prev[type] || []).map(r => r.resourceId === resourceId ? { ...r, quantity: quantity < 0 ? 0 : quantity } : r)
       }));
   };
 
   const removeResource = (type: 'tools' | 'materials', resourceId: string) => {
       setFormState(prev => ({
           ...prev,
-          [type]: prev[type].filter(r => r.resourceId !== resourceId)
+          [type]: (prev[type] || []).filter(r => r.resourceId !== resourceId)
       }));
   };
 
@@ -94,7 +97,7 @@ const Activities: React.FC = () => {
               </div>
             </div>
             <div className="mt-4 space-y-3 max-h-48 overflow-y-auto pr-2">
-                {formState[type].length > 0 ? formState[type].map(correlated => {
+                {(formState[type] || []).length > 0 ? (formState[type] || []).map(correlated => {
                     const resource = resourceList.find(r => r.id === correlated.resourceId);
                     if (!resource) return null;
                     const isCoefficient = type === 'materials' && resource.coefficientM2 && resource.coefficientM2 > 0;
@@ -158,7 +161,7 @@ const Activities: React.FC = () => {
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-sm truncate">{activity.description}</td>
                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.sla}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {activity.tools.length} Equip. / {activity.materials.length} Mat.
+                    {(activity.tools || []).length} Equip. / {(activity.materials || []).length} Mat.
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end items-center space-x-1">

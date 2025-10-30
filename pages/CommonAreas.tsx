@@ -153,7 +153,7 @@ const CommonAreas: React.FC = () => {
     return workPlans
         .filter(wp => wp.commonAreaId === currentItem.id)
         .flatMap(plan => 
-            plan.plannedActivities.map(pa => {
+            (plan.plannedActivities || []).map(pa => {
                 const activity = activities.find(a => a.id === pa.activityId);
                 return {
                     periodicity: pa.periodicity,
