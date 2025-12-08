@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon } from './icons';
+import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon, MapIcon, SlidersIcon, BarChartIcon, LayoutGridIcon, MailIcon } from './icons';
 
 const navigation = [
   { name: 'Áreas Comuns', href: '/', icon: HomeIcon },
@@ -11,6 +11,11 @@ const navigation = [
   { name: 'Equipamentos', href: '/tools', icon: ToolIcon },
   { name: 'Materiais', href: '/materials', icon: MaterialIcon },
   { name: 'Equipes', href: '/team', icon: TeamIcon },
+  { name: 'Parâmetros Gov.', href: '/governance-parameters', icon: SlidersIcon },
+  { name: 'Planejamento Gov.', href: '/governance-planning', icon: BarChartIcon },
+  { name: 'Escala Gov.', href: '/governance-schedule', icon: LayoutGridIcon },
+  { name: 'Convocações', href: '/governance-convocations', icon: MailIcon },
+  { name: 'Blueprint', href: '/blueprint', icon: MapIcon },
 ];
 
 interface SidebarProps {
@@ -32,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           <MenuIcon className="w-6 h-6" />
         </button>
       </div>
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navigation.map((item) => (
           <NavLink
             key={item.name}

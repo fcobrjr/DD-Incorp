@@ -9,8 +9,14 @@ import Materials from './pages/Materials';
 import Team from './pages/Team';
 import Planning from './pages/Planning';
 import Schedule from './pages/Schedule';
+import GovernanceParameters from './pages/GovernanceParameters';
+import GovernancePlanning from './pages/GovernancePlanning';
+import GovernanceSchedule from './pages/GovernanceSchedule';
+import GovernanceConvocation from './pages/GovernanceConvocation';
+import ConvocationResponse from './pages/ConvocationResponse';
+import Blueprint from './pages/Blueprint';
 import useLocalStorage from './hooks/useLocalStorage';
-import { AppContextType, CommonArea, Activity, Resource, TeamMember, WorkPlan, ScheduledActivity } from './types';
+import { AppContextType, CommonArea, Activity, Resource, TeamMember, WorkPlan, ScheduledActivity, GovernanceParameters as GovernanceParametersType, GovernanceWeeklyPlan, GovernanceSchedule as GovernanceScheduleType, Convocation } from './types';
 import { 
   SAMPLE_COMMON_AREAS,
   SAMPLE_ACTIVITIES,
@@ -18,7 +24,10 @@ import {
   SAMPLE_MATERIALS,
   SAMPLE_TEAM_MEMBERS,
   SAMPLE_WORK_PLANS,
-  SAMPLE_SCHEDULED_ACTIVITIES
+  SAMPLE_SCHEDULED_ACTIVITIES,
+  DEFAULT_GOVERNANCE_PARAMETERS,
+  SAMPLE_GOVERNANCE_WEEKLY_PLANS,
+  SAMPLE_CONVOCATIONS
 } from './data/sampleData';
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -31,6 +40,10 @@ const App: React.FC = () => {
   const [teamMembers, setTeamMembers] = useLocalStorage<TeamMember[]>('teamMembers', SAMPLE_TEAM_MEMBERS);
   const [workPlans, setWorkPlans] = useLocalStorage<WorkPlan[]>('workPlans', SAMPLE_WORK_PLANS);
   const [scheduledActivities, setScheduledActivities] = useLocalStorage<ScheduledActivity[]>('scheduledActivities', SAMPLE_SCHEDULED_ACTIVITIES);
+  const [governanceParameters, setGovernanceParameters] = useLocalStorage<GovernanceParametersType>('governanceParameters', DEFAULT_GOVERNANCE_PARAMETERS);
+  const [governanceWeeklyPlans, setGovernanceWeeklyPlans] = useLocalStorage<GovernanceWeeklyPlan[]>('governanceWeeklyPlans', SAMPLE_GOVERNANCE_WEEKLY_PLANS);
+  const [governanceSchedules, setGovernanceSchedules] = useLocalStorage<GovernanceScheduleType[]>('governanceSchedules', []);
+  const [governanceConvocations, setGovernanceConvocations] = useLocalStorage<Convocation[]>('governanceConvocations', SAMPLE_CONVOCATIONS);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -41,7 +54,11 @@ const App: React.FC = () => {
     materials, setMaterials,
     teamMembers, setTeamMembers,
     workPlans, setWorkPlans,
-    scheduledActivities, setScheduledActivities
+    scheduledActivities, setScheduledActivities,
+    governanceParameters, setGovernanceParameters,
+    governanceWeeklyPlans, setGovernanceWeeklyPlans,
+    governanceSchedules, setGovernanceSchedules,
+    governanceConvocations, setGovernanceConvocations
   };
 
   return (
@@ -58,6 +75,13 @@ const App: React.FC = () => {
               <Route path="/tools" element={<Tools />} />
               <Route path="/materials" element={<Materials />} />
               <Route path="/team" element={<Team />} />
+              <Route path="/governance-parameters" element={<GovernanceParameters />} />
+              <Route path="/governance-planning" element={<GovernancePlanning />} />
+              <Route path="/governance-schedule" element={<GovernanceSchedule />} />
+              <Route path="/governance-convocations" element={<GovernanceConvocation />} />
+              {/* Rota pública (simulada) para resposta do colaborador */}
+              <Route path="/convocation-response/:id" element={<ConvocationResponse />} />
+              <Route path="/blueprint" element={<Blueprint />} />
             </Routes>
           </main>
         </div>
