@@ -30,6 +30,59 @@
 }
 </script>
 <style>
+  /* GLOBAL FORM STYLES & RESET */
+  :root {
+    color-scheme: light; /* Force browser specific controls to light mode */
+  }
+
+  /* Standardize Inputs, Selects, and Textareas */
+  input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
+  select,
+  textarea {
+    background-color: #ffffff !important;
+    color: #1f2937 !important; /* gray-800 */
+    border-color: #d1d5db !important; /* gray-300 */
+    border-width: 1px !important;
+  }
+
+  /* Specific fix for date inputs to ensure calendar icon area is light */
+  input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] {
+    background-color: #ffffff !important;
+    color: #1f2937 !important;
+  }
+
+  /* Focus State - Light Theme */
+  input:not([type='checkbox']):not([type='radio']):focus,
+  select:focus,
+  textarea:focus {
+    background-color: #ffffff !important;
+    border-color: #3b82f6 !important; /* primary-500 */
+    outline: none !important;
+    box-shadow: 0 0 0 1px #3b82f6 !important;
+    color: #1f2937 !important;
+  }
+
+  /* Placeholder Styling */
+  ::placeholder {
+    color: #9ca3af !important; /* gray-400 */
+    opacity: 1;
+  }
+
+  /* Fix for Browser Autocomplete (removes yellow/blue background) */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-text-fill-color: #1f2937 !important;
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
   @media print {
     body, html {
       background-color: white;
@@ -63,7 +116,7 @@
   }
 </style>
 </head>
-  <body class="bg-gray-50">
+  <body class="bg-gray-50 text-gray-900">
     <div id="root"></div>
   </body>
 </html>

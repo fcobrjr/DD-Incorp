@@ -2,7 +2,7 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
-import { CalendarIcon, LayoutGridIcon, SparklesIcon } from '../components/icons';
+import { CalendarIcon, LayoutGridIcon, SparklesIcon, CheckCircleIcon, XCircleIcon, ClockIcon, MailIcon, AlertTriangleIcon } from '../components/icons';
 import { ScheduleShift, GovernanceSchedule } from '../types';
 
 const DAYS_OF_WEEK = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
@@ -22,7 +22,8 @@ const GovernanceSchedulePage: React.FC = () => {
         governanceWeeklyPlans, 
         teamMembers,
         governanceSchedules,
-        setGovernanceSchedules 
+        setGovernanceSchedules,
+        governanceConvocations
     } = useContext(AppContext)!;
 
     const [selectedWeekStart, setSelectedWeekStart] = useState<string>(formatDateISO(getMonday(new Date())));
@@ -111,17 +112,15 @@ const GovernanceSchedulePage: React.FC = () => {
 
             // 5. Assign Shifts
             // Basic logic: Assign standard shift to top N candidates
-            // Alternation logic is simulated by the 'weeklyHoursTracker' sorting which rotates staff naturally
             const shiftDuration = params.standardShiftDuration || 8;
             
             for (let i = 0; i < neededMaids; i++) {
                 if (i < dailyCandidates.length) {
                     const candidate = dailyCandidates[i];
                     
-                    // Default times (Mock logic - would be smarter in v2)
+                    // Default times
                     const startTime = "08:00";
-                    const endTime = "17:00"; // Assuming 1h break included in 9h span for 8h work? Or just 8h raw.
-                    // Let's assume standard 8h work + 1h break = 9h span
+                    const endTime = "17:00"; 
                     
                     newShifts.push({
                         id: `shift-${date}-${candidate.id}-${Date.now()}`,
@@ -170,7 +169,6 @@ const GovernanceSchedulePage: React.FC = () => {
             } else {
                 // Create new (only if value provided)
                 if (value) {
-                    const params = governanceParameters;
                     newShifts.push({
                         id: `shift-${date}-${memberId}-${Date.now()}`,
                         teamMemberId: memberId,
@@ -223,7 +221,6 @@ const GovernanceSchedulePage: React.FC = () => {
 
     const weekDays = useMemo(() => getWeekDays(), [selectedWeekStart]);
     
-    // Get planned demand to compare
     const plannedDemand = useMemo(() => {
         return governanceWeeklyPlans.find(p => p.weekStartDate === selectedWeekStart)?.calculatedDemand || [];
     }, [selectedWeekStart, governanceWeeklyPlans]);
@@ -232,10 +229,43 @@ const GovernanceSchedulePage: React.FC = () => {
         return teamMembers.filter(m => m.sector === 'Governança' && m.isActive).sort((a,b) => a.name.localeCompare(b.name));
     }, [teamMembers]);
 
-    // Calculate Scheduled Count per Day
     const getScheduledCount = (date: string) => {
         return shifts.filter(s => s.date === date && s.startTime && s.endTime).length;
     };
+
+    // --- CONVOCATION STATUS HELPER ---
+    const getConvocationStatus = (shiftId: string) => {
+        const conv = governanceConvocations.find(c => c.shiftId === shiftId);
+        if (!conv) return null;
+        return conv.status;
+    };
+
+    const renderStatusIcon = (status: string | null) => {
+        switch (status) {
+            case 'Pendente':
+                return <ClockIcon className="w-3 h-3 text-amber-500" title="Aguardando Resposta" />;
+            case 'Aceita':
+                return <CheckCircleIcon className="w-3 h-3 text-green-500" title="Convocação Aceita" />;
+            case 'Recusada':
+                return <XCircleIcon className="w-3 h-3 text-red-500" title="Convocação Recusada" />;
+            case 'Expirada':
+                return <AlertTriangleIcon className="w-3 h-3 text-gray-400" title="Prazo Expirado" />;
+            default:
+                return null;
+        }
+    };
+
+    // --- SUMMARY STATS ---
+    const summaryStats = useMemo(() => {
+        const totalShifts = shifts.filter(s => s.startTime && s.endTime).length;
+        const shiftsWithConvocation = shifts.map(s => governanceConvocations.find(c => c.shiftId === s.id)).filter(Boolean);
+        const accepted = shiftsWithConvocation.filter(c => c?.status === 'Aceita').length;
+        const pending = shiftsWithConvocation.filter(c => c?.status === 'Pendente').length;
+        const refused = shiftsWithConvocation.filter(c => c?.status === 'Recusada').length;
+        const notSent = totalShifts - shiftsWithConvocation.length;
+
+        return { totalShifts, accepted, pending, refused, notSent };
+    }, [shifts, governanceConvocations]);
 
     return (
         <div className="p-8 pb-20">
@@ -263,17 +293,39 @@ const GovernanceSchedulePage: React.FC = () => {
             </PageHeader>
 
             <div className="space-y-6">
-                 {/* Week Selector */}
-                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4">
-                    <CalendarIcon className="w-5 h-5 text-gray-500" />
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase">Semana de Referência</label>
-                        <input 
-                            type="date" 
-                            value={selectedWeekStart} 
-                            onChange={handleDateChange} 
-                            className="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" 
-                        />
+                 {/* Top Controls & Summary */}
+                 <div className="flex flex-col md:flex-row gap-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4 flex-shrink-0">
+                        <CalendarIcon className="w-5 h-5 text-gray-500" />
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase">Semana de Referência</label>
+                            <input 
+                                type="date" 
+                                value={selectedWeekStart} 
+                                onChange={handleDateChange} 
+                                className="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" 
+                            />
+                        </div>
+                    </div>
+
+                    {/* Summary Cards */}
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg">
+                            <span className="text-xs text-blue-600 font-bold uppercase">Total Turnos</span>
+                            <div className="text-xl font-bold text-blue-800">{summaryStats.totalShifts}</div>
+                        </div>
+                        <div className="bg-green-50 border border-green-100 p-3 rounded-lg">
+                            <span className="text-xs text-green-600 font-bold uppercase">Confirmados</span>
+                            <div className="text-xl font-bold text-green-800">{summaryStats.accepted}</div>
+                        </div>
+                        <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg">
+                            <span className="text-xs text-amber-600 font-bold uppercase">Pendentes</span>
+                            <div className="text-xl font-bold text-amber-800">{summaryStats.pending}</div>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg">
+                            <span className="text-xs text-gray-500 font-bold uppercase">Não Enviados</span>
+                            <div className="text-xl font-bold text-gray-700">{summaryStats.notSent}</div>
+                        </div>
                     </div>
                 </div>
 
@@ -306,7 +358,6 @@ const GovernanceSchedulePage: React.FC = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {staff.map(member => {
-                                // Calculate total hours for this member in this schedule
                                 const memberTotalHours = shifts
                                     .filter(s => s.teamMemberId === member.id && s.totalHours > 0)
                                     .reduce((acc, curr) => acc + curr.totalHours, 0);
@@ -319,14 +370,21 @@ const GovernanceSchedulePage: React.FC = () => {
                                         </td>
                                         {weekDays.map(d => {
                                             const shift = shifts.find(s => s.teamMemberId === member.id && s.date === d.date);
+                                            const convStatus = shift?.id ? getConvocationStatus(shift.id) : null;
+
                                             return (
                                                 <td key={d.date} className="px-2 py-2 border-r border-gray-200 text-center relative group">
-                                                    <div className="flex flex-col gap-1 items-center">
+                                                    <div className="flex flex-col gap-1 items-center relative">
                                                         <input 
                                                             type="time" 
                                                             value={shift?.startTime || ''} 
                                                             onChange={(e) => handleShiftChange(member.id, d.date, 'startTime', e.target.value)}
-                                                            className="block w-24 text-xs rounded border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-0.5 text-center h-6"
+                                                            className={`block w-24 text-xs rounded shadow-sm focus:border-primary-500 focus:ring-primary-500 p-0.5 text-center h-6 ${
+                                                                convStatus === 'Recusada' ? 'border-red-300 bg-red-50 text-red-700' :
+                                                                convStatus === 'Aceita' ? 'border-green-300 bg-green-50 text-green-700' :
+                                                                convStatus === 'Pendente' ? 'border-amber-300 bg-amber-50 text-amber-700' :
+                                                                'border-gray-300'
+                                                            }`}
                                                         />
                                                         <input 
                                                             type="time" 
@@ -334,8 +392,15 @@ const GovernanceSchedulePage: React.FC = () => {
                                                             onChange={(e) => handleShiftChange(member.id, d.date, 'endTime', e.target.value)}
                                                             className="block w-24 text-xs rounded border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-0.5 text-center h-6"
                                                         />
+                                                        
+                                                        {/* Status Icon Overlay/Badge */}
+                                                        {convStatus && (
+                                                            <div className="absolute -top-1.5 -right-1 bg-white rounded-full p-0.5 shadow-sm border border-gray-100 z-10">
+                                                                {renderStatusIcon(convStatus)}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    {/* Visual Indicator of break or hours */}
+                                                    
                                                     {shift?.totalHours ? (
                                                         <div className="text-[10px] text-gray-400 mt-1">{shift.totalHours}h</div>
                                                     ) : null}
@@ -350,6 +415,14 @@ const GovernanceSchedulePage: React.FC = () => {
                             })}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Legend */}
+                <div className="flex gap-4 text-xs text-gray-500 justify-end">
+                    <div className="flex items-center gap-1"><ClockIcon className="w-3 h-3 text-amber-500"/> Pendente</div>
+                    <div className="flex items-center gap-1"><CheckCircleIcon className="w-3 h-3 text-green-500"/> Confirmado</div>
+                    <div className="flex items-center gap-1"><XCircleIcon className="w-3 h-3 text-red-500"/> Recusado</div>
+                    <div className="flex items-center gap-1"><AlertTriangleIcon className="w-3 h-3 text-gray-400"/> Expirado</div>
                 </div>
             </div>
         </div>

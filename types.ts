@@ -68,7 +68,8 @@ export interface TeamMember extends BaseItem {
   notes?: string;
 }
 
-export type Periodicity = 'Diário' | 'Semanal' | 'Quinzenal' | 'Mensal' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anual';
+// Alterado para string para permitir valores como "Cada 3 dias"
+export type Periodicity = 'Diário' | 'Semanal' | 'Quinzenal' | 'Mensal' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anual' | string;
 
 export interface PlannedActivity {
   id: string;

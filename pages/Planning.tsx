@@ -1,12 +1,13 @@
+
 import React, { useState, useContext, useMemo } from 'react';
 import { AppContext } from '../App';
 import { WorkPlan, PlannedActivity, Periodicity, Activity, CorrelatedResource } from '../types';
 import { TrashIcon, EditIcon, PlusIcon, LayoutGridIcon, ListIcon, FilterIcon } from '../components/icons';
 import PageHeader from '../components/PageHeader';
 
-const PERIODICITY_OPTIONS: Periodicity[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
+const PERIODICITY_OPTIONS: string[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
 
-const PERIODICITY_COLOR_CONFIG: { [key in Periodicity]: { text: string; bg: string; } } = {
+const PERIODICITY_COLOR_CONFIG: { [key: string]: { text: string; bg: string; } } = {
     'Diário': { text: 'text-blue-800', bg: 'bg-blue-100' },
     'Semanal': { text: 'text-orange-800', bg: 'bg-orange-100' },
     'Quinzenal': { text: 'text-amber-800', bg: 'bg-amber-100' },
@@ -15,6 +16,10 @@ const PERIODICITY_COLOR_CONFIG: { [key in Periodicity]: { text: string; bg: stri
     'Trimestral': { text: 'text-green-800', bg: 'bg-green-100' },
     'Semestral': { text: 'text-teal-800', bg: 'bg-teal-100' },
     'Anual': { text: 'text-cyan-800', bg: 'bg-cyan-100' },
+};
+
+const getPeriodicityStyle = (p: string) => {
+    return PERIODICITY_COLOR_CONFIG[p] || { text: 'text-purple-800', bg: 'bg-purple-100' };
 };
 
 const Planning: React.FC = () => {
@@ -502,10 +507,11 @@ const Planning: React.FC = () => {
                                 <div className="p-3 space-y-2 bg-gray-50/75 flex-1 max-h-60 overflow-y-auto">
                                     {plannedActivities.length > 0 ? plannedActivities.map(pa => {
                                         const activity = activities.find(a => a.id === pa.activityId);
+                                        const periodStyle = getPeriodicityStyle(pa.periodicity);
                                         return (
                                             <div key={pa.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200/80 shadow-sm">
                                                 <p className="font-medium text-sm text-gray-700">{activity?.name || 'Atividade desconhecida'}</p>
-                                                <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${PERIODICITY_COLOR_CONFIG[pa.periodicity]?.bg || 'bg-gray-100'} ${PERIODICITY_COLOR_CONFIG[pa.periodicity]?.text || 'text-gray-800'}`}>{pa.periodicity}</span>
+                                                <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${periodStyle.bg} ${periodStyle.text}`}>{pa.periodicity}</span>
                                             </div>
                                         );
                                     }) : (
@@ -537,7 +543,9 @@ const Planning: React.FC = () => {
                             </tr>
                         </thead>
                          <tbody className="bg-white divide-y divide-gray-200">
-                            {flattenedActivities.length > 0 ? flattenedActivities.map(item => (
+                            {flattenedActivities.length > 0 ? flattenedActivities.map(item => {
+                                const periodStyle = getPeriodicityStyle(item.periodicity);
+                                return (
                                 <tr key={item.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.client}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.location}</td>
@@ -545,7 +553,7 @@ const Planning: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.environment}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.activityName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${PERIODICITY_COLOR_CONFIG[item.periodicity]?.bg || 'bg-gray-100'} ${PERIODICITY_COLOR_CONFIG[item.periodicity]?.text || 'text-gray-800'}`}>{item.periodicity}</span>
+                                        <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${periodStyle.bg} ${periodStyle.text}`}>{item.periodicity}</span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.activitySla}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -554,7 +562,7 @@ const Planning: React.FC = () => {
                                         </button>
                                     </td>
                                 </tr>
-                            )) : (
+                            )}) : (
                                 <tr>
                                     <td colSpan={8} className="text-center py-10 text-gray-500">Nenhuma atividade planejada encontrada com os filtros atuais.</td>
                                 </tr>
@@ -596,14 +604,46 @@ const Planning: React.FC = () => {
                                         <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                                             {(formState.plannedActivities || []).length > 0 ? formState.plannedActivities.map(plannedAct => {
                                                 const activity = activities.find(a => a.id === plannedAct.activityId);
+                                                const isStandardPeriodicity = PERIODICITY_OPTIONS.includes(plannedAct.periodicity);
+                                                const isCustom = plannedAct.periodicity.startsWith('Cada ');
+                                                const customDays = isCustom ? plannedAct.periodicity.split(' ')[1] : 3;
+
                                                 return activity ? (
                                                     <div key={plannedAct.id} className="bg-gray-50 p-4 rounded-lg border">
                                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                                             <p className="font-medium text-sm text-gray-800 flex-1">{activity.name}</p>
-                                                            <div className="flex items-center gap-x-1">
-                                                                <select value={plannedAct.periodicity} onChange={e => updateActivityPeriodicity(plannedAct.id, e.target.value as Periodicity)} className="block w-full sm:w-40 rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
-                                                                    {PERIODICITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
-                                                                </select>
+                                                            <div className="flex items-center gap-x-2 flex-wrap">
+                                                                <div className="flex items-center gap-2">
+                                                                    <select 
+                                                                        value={isStandardPeriodicity ? plannedAct.periodicity : 'Personalizado'} 
+                                                                        onChange={e => {
+                                                                            if (e.target.value === 'Personalizado') {
+                                                                                updateActivityPeriodicity(plannedAct.id, 'Cada 3 dias');
+                                                                            } else {
+                                                                                updateActivityPeriodicity(plannedAct.id, e.target.value as Periodicity);
+                                                                            }
+                                                                        }} 
+                                                                        className="block w-full sm:w-40 rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+                                                                    >
+                                                                        {PERIODICITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                                                                        <option value="Personalizado">Personalizado</option>
+                                                                    </select>
+                                                                    
+                                                                    {!isStandardPeriodicity && (
+                                                                         <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-md px-2 py-1 shadow-sm">
+                                                                            <span className="text-xs text-gray-500">Cada</span>
+                                                                            <input 
+                                                                                type="number" 
+                                                                                min="1"
+                                                                                value={customDays}
+                                                                                onChange={(e) => updateActivityPeriodicity(plannedAct.id, `Cada ${e.target.value} dias`)}
+                                                                                className="w-12 text-center text-sm border-0 border-b border-gray-200 focus:ring-0 p-0"
+                                                                            />
+                                                                            <span className="text-xs text-gray-500">dias</span>
+                                                                         </div>
+                                                                    )}
+                                                                </div>
+
                                                                 <button type="button" onClick={() => openActivityModal(activity)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label={`Editar atividade ${activity.name}`}>
                                                                     <EditIcon className="w-5 h-5"/>
                                                                 </button>

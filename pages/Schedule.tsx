@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, useMemo, useCallback, useRef, useEffect } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
@@ -36,7 +37,7 @@ const STATUS_CONFIG: { [key in Status]: { label: string; color: string; bg: stri
     'Atrasada': { label: 'Atrasada', color: 'text-red-800', bg: 'bg-red-100', border: 'border-red-400' },
 };
 
-const PERIODICITY_COLOR_CONFIG: { [key in Periodicity]: { text: string; bg: string; } } = {
+const PERIODICITY_COLOR_CONFIG: { [key: string]: { text: string; bg: string; } } = {
     'Diário': { text: 'text-blue-800', bg: 'bg-blue-100' },
     'Semanal': { text: 'text-orange-800', bg: 'bg-orange-100' },
     'Quinzenal': { text: 'text-amber-800', bg: 'bg-amber-100' },
@@ -47,10 +48,25 @@ const PERIODICITY_COLOR_CONFIG: { [key in Periodicity]: { text: string; bg: stri
     'Anual': { text: 'text-cyan-800', bg: 'bg-cyan-100' },
 };
 
-const PERIODICITY_OPTIONS: Periodicity[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
+const getPeriodicityStyle = (p: string) => {
+    return PERIODICITY_COLOR_CONFIG[p] || { text: 'text-purple-800', bg: 'bg-purple-100' };
+};
+
+const PERIODICITY_OPTIONS: string[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
 
 const getNextDate = (currentDate: Date, periodicity: Periodicity): Date => {
     const nextDate = new Date(currentDate);
+    
+    // Check for custom periodicity: "Cada X dias"
+    if (periodicity.startsWith('Cada ')) {
+        const parts = periodicity.split(' ');
+        const days = parseInt(parts[1]);
+        if (!isNaN(days) && days > 0) {
+            nextDate.setDate(nextDate.getDate() + days);
+            return nextDate;
+        }
+    }
+
     switch (periodicity) {
         case 'Diário': nextDate.setDate(nextDate.getDate() + 1); break;
         case 'Semanal': nextDate.setDate(nextDate.getDate() + 7); break;
@@ -60,6 +76,7 @@ const getNextDate = (currentDate: Date, periodicity: Periodicity): Date => {
         case 'Trimestral': nextDate.setMonth(nextDate.getMonth() + 3); break;
         case 'Semestral': nextDate.setMonth(nextDate.getMonth() + 6); break;
         case 'Anual': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+        default: nextDate.setDate(nextDate.getDate() + 1); // Fallback
     }
     return nextDate;
 };
@@ -730,7 +747,9 @@ const Schedule: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredActivities.length > 0 ? filteredActivities.map(item => (
+                        {filteredActivities.length > 0 ? filteredActivities.map(item => {
+                             const periodStyle = getPeriodicityStyle(item.periodicity);
+                             return (
                             <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.activityName}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.client}</td>
@@ -738,7 +757,7 @@ const Schedule: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.subLocation}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.environment}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${PERIODICITY_COLOR_CONFIG[item.periodicity]?.bg || 'bg-gray-100'} ${PERIODICITY_COLOR_CONFIG[item.periodicity]?.text || 'text-gray-800'}`}>{item.periodicity}</span>
+                                    <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${periodStyle.bg} ${periodStyle.text}`}>{item.periodicity}</span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.plannedDate ? new Date(item.plannedDate + 'T00:00:00').toLocaleDateString() : '—'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{teamMembers.find(t => t.id === item.operatorId)?.name || 'Não atribuído'}</td>
@@ -753,7 +772,7 @@ const Schedule: React.FC = () => {
                                     </button>
                                 </td>
                             </tr>
-                        )) : (
+                        )}) : (
                             <tr><td colSpan={10} className="text-center py-10 text-gray-500">Nenhuma atividade encontrada para os filtros selecionados.</td></tr>
                         )}
                     </tbody>
@@ -946,7 +965,7 @@ const Schedule: React.FC = () => {
 
                         <div className="space-y-2 mb-6">
                             {selectedActivity.plannedDate && <p><strong>Data Planejada:</strong> {new Date(selectedActivity.plannedDate + 'T00:00:00').toLocaleDateString()}</p>}
-                            <p><strong>Periodicidade:</strong> <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${PERIODICITY_COLOR_CONFIG[selectedActivity.periodicity]?.bg || 'bg-gray-100'} ${PERIODICITY_COLOR_CONFIG[selectedActivity.periodicity]?.text || 'text-gray-800'}`}>{selectedActivity.periodicity}</span></p>
+                            <p><strong>Periodicidade:</strong> <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${getPeriodicityStyle(selectedActivity.periodicity).bg} ${getPeriodicityStyle(selectedActivity.periodicity).text}`}>{selectedActivity.periodicity}</span></p>
                             <p><strong>Operador:</strong> {teamMembers.find(t => t.id === selectedActivity.operatorId)?.name || 'Não atribuído'}</p>
                         </div>
 
