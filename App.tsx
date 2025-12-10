@@ -9,6 +9,7 @@ import Materials from './pages/Materials';
 import Team from './pages/Team';
 import Planning from './pages/Planning';
 import Schedule from './pages/Schedule';
+import DailyWorkOrders from './pages/DailyWorkOrders';
 import GovernanceParameters from './pages/GovernanceParameters';
 import GovernancePlanning from './pages/GovernancePlanning';
 import GovernanceSchedule from './pages/GovernanceSchedule';
@@ -71,6 +72,7 @@ const App: React.FC = () => {
               <Route path="/" element={<CommonAreas />} />
               <Route path="/planning" element={<Planning />} />
               <Route path="/schedule" element={<Schedule />} />
+              <Route path="/daily-work-orders" element={<DailyWorkOrders />} />
               <Route path="/activities" element={<Activities />} />
               <Route path="/tools" element={<Tools />} />
               <Route path="/materials" element={<Materials />} />

@@ -117,6 +117,7 @@ export interface GovernanceParameters {
   alternationMode: 'Conservador' | 'Flexível';
 
   // 5. Regime Operacional
+  totalApartments: number; // Quantidade total de apartamentos do hotel
   standardShiftDuration: number;
   efficiencyTarget: number; // percentage (0-100)
   sundayRotationRatio: number; // 1 every X weeks
@@ -133,6 +134,7 @@ export interface DailyOperationalData {
   date: string; // YYYY-MM-DD
   dayOfWeek: string;
   occupancy: number; // %
+  uhOccupied?: number; // Quantidade absoluta de quartos ocupados
   vacantDirty: number;
   stay: number;
   dayType: DayType;
@@ -151,6 +153,7 @@ export interface GovernanceWeeklyPlan {
   id: string;
   weekStartDate: string; // Monday YYYY-MM-DD
   weekEndDate: string; // Sunday YYYY-MM-DD
+  weeklyMaintenanceRooms?: number; // Quartos fora de serviço na semana (Valor Único)
   days: DailyOperationalData[];
   calculatedDemand?: DailyDemand[];
   updatedAt?: string;
@@ -167,6 +170,10 @@ export interface ScheduleShift {
   breakDuration: number; // minutes
   totalHours: number;
   activity: string; // e.g., 'Limpeza UH'
+  type?: 'Manhã' | 'Tarde' | 'Noite' | 'Intermediário';
+  breakStartTime?: string; // HH:mm
+  breakEndTime?: string; // HH:mm
+  observation?: string;
 }
 
 export interface GovernanceSchedule {

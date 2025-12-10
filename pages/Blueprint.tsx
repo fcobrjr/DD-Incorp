@@ -51,6 +51,17 @@ const SYSTEM_MAP: SystemNode[] = [
         ]
     },
     {
+        id: 'daily-work-orders',
+        title: 'OS Diária',
+        type: 'page',
+        description: 'Geração e impressão de Ordens de Serviço por colaborador.',
+        children: [
+             { id: 'filter-employee', title: 'Filtros: Data/Colaborador', type: 'component', description: 'Seleção do dia e funcionário para filtrar tarefas.' },
+             { id: 'calc-mat', title: 'Lógica: Cálculo Consumo', type: 'component', description: 'Cálculo de materiais necessários por tarefa baseado na área m².' },
+             { id: 'print-layout', title: 'Layout Impressão', type: 'component', description: 'Estilização específica (@media print) para folha A4 limpa.' }
+        ]
+    },
+    {
         id: 'activities',
         title: 'Atividades',
         type: 'page',

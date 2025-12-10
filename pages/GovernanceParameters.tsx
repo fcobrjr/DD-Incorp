@@ -202,7 +202,11 @@ const GovernanceParametersPage: React.FC = () => {
                             Regime Operacional
                         </h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 ml-11">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ml-11">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Total de Apartamentos</label>
+                            <input type="number" name="totalApartments" value={formState.totalApartments || 144} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Jornada Média (h)</label>
                              <input type="number" name="standardShiftDuration" value={formState.standardShiftDuration} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />

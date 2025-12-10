@@ -228,6 +228,7 @@ export const DEFAULT_GOVERNANCE_PARAMETERS: GovernanceParameters = {
   alternationMode: 'Flexível',
 
   // 5. Regime Operacional
+  totalApartments: 144, // Default 144 apartments
   standardShiftDuration: 8,
   efficiencyTarget: 85,
   sundayRotationRatio: 2, // 1 domingo a cada 2 semanas (exemplo)

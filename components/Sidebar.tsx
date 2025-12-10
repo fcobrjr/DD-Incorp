@@ -1,12 +1,13 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon, MapIcon, SlidersIcon, BarChartIcon, LayoutGridIcon, MailIcon } from './icons';
+import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon, MapIcon, SlidersIcon, BarChartIcon, LayoutGridIcon, MailIcon, ClipboardListIcon } from './icons';
 
 const navigation = [
   { name: 'Áreas Comuns', href: '/', icon: HomeIcon },
   { name: 'Planejamento', href: '/planning', icon: PlanIcon },
   { name: 'Agenda', href: '/schedule', icon: CalendarIcon },
+  { name: 'OS Diária', href: '/daily-work-orders', icon: ClipboardListIcon },
   { name: 'Atividades', href: '/activities', icon: ActivityIcon },
   { name: 'Equipamentos', href: '/tools', icon: ToolIcon },
   { name: 'Materiais', href: '/materials', icon: MaterialIcon },

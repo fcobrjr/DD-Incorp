@@ -81,17 +81,27 @@ const getNextDate = (currentDate: Date, periodicity: Periodicity): Date => {
     return nextDate;
 };
 
+// Safe date creation to avoid timezone shifts
+const createSafeDate = (isoDate: string) => {
+    if (!isoDate) return new Date();
+    const [year, month, day] = isoDate.split('-').map(Number);
+    return new Date(year, month - 1, day, 12, 0, 0);
+};
+
 const getWeekRange = (date = new Date()): { startDate: string; endDate: string } => {
     const today = new Date(date);
     const day = today.getDay(); // Sunday - 0, Monday - 1, ...
     const diff = today.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    const startOfWeek = new Date(today.setDate(diff));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(12, 0, 0, 0); // Safety hour
+    
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
 
     return {
-        startDate: startOfWeek.toISOString().split('T')[0],
-        endDate: endOfWeek.toISOString().split('T')[0],
+        startDate: formatDateISO(startOfWeek),
+        endDate: formatDateISO(endOfWeek),
     };
 };
 
@@ -101,12 +111,17 @@ const getMonthRange = (date = new Date()): { startDate: string; endDate: string 
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
     return {
-        startDate: startOfMonth.toISOString().split('T')[0],
-        endDate: endOfMonth.toISOString().split('T')[0],
+        startDate: formatDateISO(startOfMonth),
+        endDate: formatDateISO(endOfMonth),
     };
 };
 
-const formatDateISO = (date: Date) => date.toISOString().split('T')[0];
+const formatDateISO = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 const formatDateDisplay = (isoDate: string) => {
     if (!isoDate || typeof isoDate !== 'string') return '';
@@ -451,7 +466,7 @@ const Schedule: React.FC = () => {
                 let nextDate = lastExecution ? getNextDate(new Date(lastExecution.executionDate!), pa.periodicity) : new Date(today);
 
                 while (nextDate <= new Date(today.getTime() + days * 24 * 60 * 60 * 1000)) {
-                    const nextDateISO = nextDate.toISOString().split('T')[0];
+                    const nextDateISO = formatDateISO(nextDate);
                     const alreadyExists = scheduledActivities.some(sa => sa.plannedActivityId === pa.id && sa.plannedDate === nextDateISO);
 
                     if (!alreadyExists) {
@@ -491,7 +506,7 @@ const Schedule: React.FC = () => {
 
         // Generate next occurrence
         const nextDate = getNextDate(new Date(selectedActivity.plannedDate), selectedActivity.periodicity);
-        const nextDateISO = nextDate.toISOString().split('T')[0];
+        const nextDateISO = formatDateISO(nextDate);
         
         const newScheduled: ScheduledActivity = {
             id: `sa-${selectedActivity.workPlanId}-${(selectedActivity.original as ScheduledActivity).plannedActivityId}-${nextDateISO}`,
@@ -543,6 +558,7 @@ const Schedule: React.FC = () => {
                 return currentCalendarDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
             }
             if (calendarViewMode === 'week') {
+                // Use safe date calculations for title range
                 const startOfWeek = new Date(currentCalendarDate);
                 const day = startOfWeek.getDay();
                 const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
@@ -608,7 +624,9 @@ const Schedule: React.FC = () => {
             const date = currentCalendarDate.getDate();
             const dayOfWeek = currentCalendarDate.getDay(); 
 
-            const startOfWeek = new Date(year, month, date - dayOfWeek);
+            // Calculate start of week safely
+            const diff = date - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+            const startOfWeek = new Date(year, month, diff);
 
             const weekDates = Array.from({ length: 7 }).map((_, i) => {
                 const d = new Date(startOfWeek);

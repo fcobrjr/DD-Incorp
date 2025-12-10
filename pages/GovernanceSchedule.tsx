@@ -7,14 +7,35 @@ import { ScheduleShift, GovernanceSchedule } from '../types';
 
 const DAYS_OF_WEEK = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
 
-const getMonday = (d: Date) => {
+// Helper seguro para criar data sem fuso
+const createSafeDate = (isoDate: string) => {
+    const [year, month, day] = isoDate.split('-').map(Number);
+    return new Date(year, month - 1, day, 12, 0, 0);
+};
+
+const getSafeMonday = (d: Date) => {
     const date = new Date(d);
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(date.setDate(diff));
+    const monday = new Date(date);
+    monday.setDate(diff);
+    return monday;
 };
 
-const formatDateISO = (d: Date) => d.toISOString().split('T')[0];
+const getISOWeekInfo = (d: Date) => {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return { week: weekNo, year: date.getUTCFullYear() };
+};
+
+const formatDateISO = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 const GovernanceSchedulePage: React.FC = () => {
     const { 
@@ -26,7 +47,7 @@ const GovernanceSchedulePage: React.FC = () => {
         governanceConvocations
     } = useContext(AppContext)!;
 
-    const [selectedWeekStart, setSelectedWeekStart] = useState<string>(formatDateISO(getMonday(new Date())));
+    const [selectedWeekStart, setSelectedWeekStart] = useState<string>(formatDateISO(getSafeMonday(new Date())));
     const [currentSchedule, setCurrentSchedule] = useState<GovernanceSchedule | null>(null);
     const [shifts, setShifts] = useState<ScheduleShift[]>([]);
     const [isDirty, setIsDirty] = useState(false);
@@ -44,12 +65,11 @@ const GovernanceSchedulePage: React.FC = () => {
         setIsDirty(false);
     }, [selectedWeekStart, governanceSchedules]);
 
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const date = new Date(e.target.value);
-        if (!isNaN(date.getTime())) {
-            const monday = getMonday(date);
-            setSelectedWeekStart(formatDateISO(monday));
-        }
+    const changeWeek = (direction: 'next' | 'prev') => {
+        const currentMonday = createSafeDate(selectedWeekStart);
+        const daysToAdd = direction === 'next' ? 7 : -7;
+        currentMonday.setDate(currentMonday.getDate() + daysToAdd);
+        setSelectedWeekStart(formatDateISO(currentMonday));
     };
 
     // --- THE SUGGESTION ENGINE ---
@@ -157,8 +177,16 @@ const GovernanceSchedulePage: React.FC = () => {
                     const end = new Date(`2000-01-01T${shift.endTime}`);
                     let diffMs = end.getTime() - start.getTime();
                     if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000; // overnight
-                    const diffHrs = (diffMs / (1000 * 60 * 60)) - (shift.breakDuration / 60);
-                    shift.totalHours = parseFloat(diffHrs.toFixed(2));
+                    
+                    // Smart Break Logic
+                    let breakTime = shift.breakDuration;
+                    const grossHours = diffMs / (1000 * 60 * 60);
+                    if (grossHours <= 6) breakTime = 15;
+                    else breakTime = 60;
+                    shift.breakDuration = breakTime;
+
+                    const netHours = grossHours - (breakTime / 60);
+                    shift.totalHours = parseFloat(netHours.toFixed(2));
                 }
                 // Remove if both empty
                 if (!shift.startTime && !shift.endTime) {
@@ -187,7 +215,7 @@ const GovernanceSchedulePage: React.FC = () => {
     };
 
     const handleSave = () => {
-        const endDate = new Date(selectedWeekStart + 'T00:00:00');
+        const endDate = createSafeDate(selectedWeekStart);
         endDate.setDate(endDate.getDate() + 6);
 
         const newSchedule: GovernanceSchedule = {
@@ -207,7 +235,7 @@ const GovernanceSchedulePage: React.FC = () => {
 
     // --- RENDERING HELPERS ---
     const getWeekDays = () => {
-        const start = new Date(selectedWeekStart + 'T00:00:00');
+        const start = createSafeDate(selectedWeekStart);
         return Array.from({ length: 7 }).map((_, i) => {
             const d = new Date(start);
             d.setDate(d.getDate() + i);
@@ -221,6 +249,18 @@ const GovernanceSchedulePage: React.FC = () => {
 
     const weekDays = useMemo(() => getWeekDays(), [selectedWeekStart]);
     
+    const weekInfo = (() => {
+        if (!selectedWeekStart) return { label: '', range: '' };
+        const start = createSafeDate(selectedWeekStart);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        const isoInfo = getISOWeekInfo(start);
+        return {
+            label: `Semana ${isoInfo.week} - ${isoInfo.year}`,
+            range: `${start.toLocaleDateString('pt-BR')} a ${end.toLocaleDateString('pt-BR')}`
+        };
+    })();
+
     const plannedDemand = useMemo(() => {
         return governanceWeeklyPlans.find(p => p.weekStartDate === selectedWeekStart)?.calculatedDemand || [];
     }, [selectedWeekStart, governanceWeeklyPlans]);
@@ -243,13 +283,13 @@ const GovernanceSchedulePage: React.FC = () => {
     const renderStatusIcon = (status: string | null) => {
         switch (status) {
             case 'Pendente':
-                return <ClockIcon className="w-3 h-3 text-amber-500" title="Aguardando Resposta" />;
+                return <span title="Aguardando Resposta"><ClockIcon className="w-3 h-3 text-amber-500" /></span>;
             case 'Aceita':
-                return <CheckCircleIcon className="w-3 h-3 text-green-500" title="Convocação Aceita" />;
+                return <span title="Convocação Aceita"><CheckCircleIcon className="w-3 h-3 text-green-500" /></span>;
             case 'Recusada':
-                return <XCircleIcon className="w-3 h-3 text-red-500" title="Convocação Recusada" />;
+                return <span title="Convocação Recusada"><XCircleIcon className="w-3 h-3 text-red-500" /></span>;
             case 'Expirada':
-                return <AlertTriangleIcon className="w-3 h-3 text-gray-400" title="Prazo Expirado" />;
+                return <span title="Prazo Expirado"><AlertTriangleIcon className="w-3 h-3 text-gray-400" /></span>;
             default:
                 return null;
         }
@@ -295,16 +335,33 @@ const GovernanceSchedulePage: React.FC = () => {
             <div className="space-y-6">
                  {/* Top Controls & Summary */}
                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4 flex-shrink-0">
-                        <CalendarIcon className="w-5 h-5 text-gray-500" />
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase">Semana de Referência</label>
-                            <input 
-                                type="date" 
-                                value={selectedWeekStart} 
-                                onChange={handleDateChange} 
-                                className="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" 
-                            />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col justify-center gap-2 flex-shrink-0 min-w-[280px]">
+                        <div className="flex items-center gap-2 mb-1">
+                            <CalendarIcon className="w-5 h-5 text-primary-600" />
+                            <span className="text-xs font-bold text-gray-500 uppercase">Semana de Referência</span>
+                        </div>
+                         {/* Week Navigator */}
+                         <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 overflow-hidden shadow-inner">
+                            <button 
+                                onClick={() => changeWeek('prev')}
+                                className="px-3 py-2 hover:bg-gray-200 text-gray-500 border-r border-gray-200 transition-colors h-full"
+                            >
+                                &lt;
+                            </button>
+                            <div className="px-4 py-1 text-center flex-1">
+                                <span className="block text-sm font-bold text-primary-700 uppercase tracking-wide">
+                                    {weekInfo.label}
+                                </span>
+                                <span className="block text-[10px] text-gray-500 font-medium">
+                                    {weekInfo.range}
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => changeWeek('next')}
+                                className="px-3 py-2 hover:bg-gray-200 text-gray-500 border-l border-gray-200 transition-colors h-full"
+                            >
+                                &gt;
+                            </button>
                         </div>
                     </div>
 
