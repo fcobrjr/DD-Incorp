@@ -196,6 +196,67 @@ const Schedule: React.FC = () => {
         return <div className="grid grid-cols-7 border-l border-t border-gray-200 bg-white">{days}</div>;
     };
 
+    const renderWeekView = () => {
+        const range = getWeekRange(currentCalendarDate);
+        const start = createSafeDate(range.startDate);
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            const dateStr = formatDateISO(d);
+            const dayActivities = filteredActivities.filter(a => a.plannedDate === dateStr);
+            days.push(
+                <div key={dateStr} className="border-r border-b border-gray-200 min-h-[400px] p-2 bg-white hover:bg-gray-50 transition-colors">
+                    <div className="text-center mb-4">
+                        <span className="block text-[10px] font-bold text-gray-400 uppercase">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
+                        <span className={`inline-flex items-center justify-center h-8 w-8 rounded-full text-sm font-bold ${dateStr === formatDateISO(new Date()) ? 'bg-primary-600 text-white' : 'text-gray-700'}`}>{d.getDate()}</span>
+                    </div>
+                    <div className="space-y-2">
+                        {dayActivities.map(a => (
+                            <div key={a.id} onClick={() => { setSelectedActivity(a); setIsPanelOpen(true); }} className={`text-[11px] p-2 rounded border cursor-pointer font-semibold shadow-sm hover:shadow transition-all ${STATUS_CONFIG[a.status].bg} ${STATUS_CONFIG[a.status].color} ${STATUS_CONFIG[a.status].border}`}>
+                                {a.activityName}
+                                <span className="block text-[9px] mt-1 opacity-70 truncate">{a.client}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+        return <div className="grid grid-cols-7 border-l border-t border-gray-200">{days}</div>;
+    };
+
+    const renderDayView = () => {
+        const dateStr = formatDateISO(currentCalendarDate);
+        const dayActivities = filteredActivities.filter(a => a.plannedDate === dateStr);
+        return (
+            <div className="p-6 bg-white min-h-[400px]">
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h4 className="text-xl font-bold text-gray-900">{currentCalendarDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
+                        <p className="text-sm text-gray-500">{dayActivities.length} tarefas programadas</p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {dayActivities.length > 0 ? dayActivities.map(a => (
+                        <div key={a.id} onClick={() => { setSelectedActivity(a); setIsPanelOpen(true); }} className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${STATUS_CONFIG[a.status].bg} ${STATUS_CONFIG[a.status].color} ${STATUS_CONFIG[a.status].border}`}>
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-sm font-bold">{a.activityName}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/50 border border-current">{a.status}</span>
+                            </div>
+                            <p className="text-xs opacity-80 mb-3">{a.client} • {a.environment}</p>
+                            <div className="flex items-center text-[10px] font-bold">
+                                <ClockIcon className="w-3 h-3 mr-1" />
+                                SLA: {a.sla} min
+                            </div>
+                        </div>
+                    )) : (
+                        <div className="col-span-full text-center py-20 text-gray-400">Nenhuma atividade para este dia.</div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="p-8">
             <PageHeader title="Agenda">
@@ -227,14 +288,26 @@ const Schedule: React.FC = () => {
                             <button onClick={handlePrev} className="p-1.5 hover:bg-white rounded transition-all text-gray-400"> <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg></button>
                             <button onClick={handleNext} className="p-1.5 hover:bg-white rounded transition-all text-gray-400"> <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
                         </div>
-                        <h3 className="text-md font-bold text-gray-700 capitalize">{currentCalendarDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+                        <h3 className="text-md font-bold text-gray-700 capitalize">
+                            {calendarViewMode === 'month' && currentCalendarDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+                            {calendarViewMode === 'week' && `Semana de ${currentCalendarDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}`}
+                            {calendarViewMode === 'day' && currentCalendarDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </h3>
                         <div className="bg-gray-100 p-1 rounded-lg flex gap-1 border border-gray-200">
-                            <button onClick={() => setCalendarViewMode('month')} className={`px-4 py-1.5 text-[10px] font-bold uppercase rounded transition-all ${calendarViewMode === 'month' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400'}`}>Mês</button>
+                            <button onClick={() => setCalendarViewMode('month')} className={`px-4 py-1.5 text-[10px] font-bold uppercase rounded transition-all ${calendarViewMode === 'month' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Mês</button>
+                            <button onClick={() => setCalendarViewMode('week')} className={`px-4 py-1.5 text-[10px] font-bold uppercase rounded transition-all ${calendarViewMode === 'week' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Semana</button>
+                            <button onClick={() => setCalendarViewMode('day')} className={`px-4 py-1.5 text-[10px] font-bold uppercase rounded transition-all ${calendarViewMode === 'day' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Dia</button>
                         </div>
                     </header>
                     <div className="flex-1 overflow-y-auto">
-                        <div className="grid grid-cols-7 text-center font-bold text-[10px] py-3 bg-gray-50/50 border-b border-gray-100 text-gray-400 uppercase"><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div><div>Dom</div></div>
-                        {renderMonthView()}
+                        {calendarViewMode === 'month' && (
+                            <>
+                                <div className="grid grid-cols-7 text-center font-bold text-[10px] py-3 bg-gray-50/50 border-b border-gray-100 text-gray-400 uppercase"><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div><div>Dom</div></div>
+                                {renderMonthView()}
+                            </>
+                        )}
+                        {calendarViewMode === 'week' && renderWeekView()}
+                        {calendarViewMode === 'day' && renderDayView()}
                     </div>
                 </div>
             ) : (
