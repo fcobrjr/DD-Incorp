@@ -268,7 +268,7 @@ const filteredCommonAreas = useMemo(() => {
         <button
             type="button"
             onClick={() => openModal()}
-            className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-150"
+            className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-150 font-semibold shadow-sm"
         >
             <PlusIcon className="w-5 h-5 mr-2" />
             Nova Área Comum
@@ -287,26 +287,19 @@ const filteredCommonAreas = useMemo(() => {
       </div>
 
       {showFilters && (
-          <div className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="mb-6 p-6 bg-white rounded-lg shadow-md border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                   <div>
                       <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-1">Pesquisa Global</label>
-                      <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                              <svg className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                              </svg>
-                          </div>
-                          <input
-                              type="text"
-                              id="search"
-                              name="search"
-                              value={filters.search}
-                              onChange={handleFilterChange}
-                              placeholder="Termo livre..."
-                              className="block w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                          />
-                      </div>
+                      <input
+                          type="text"
+                          id="search"
+                          name="search"
+                          value={filters.search}
+                          onChange={handleFilterChange}
+                          placeholder="Termo livre..."
+                          className="block w-full px-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                      />
                   </div>
 
                   <div>
@@ -380,7 +373,7 @@ const filteredCommonAreas = useMemo(() => {
               </tr>
             )) : (
                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-500 font-medium italic">
+                    <td colSpan={6} className="text-center py-10 text-gray-500">
                         {commonAreas.length > 0 ? 'Nenhuma área encontrada com os critérios de pesquisa.' : 'Nenhuma área comum cadastrada.'}
                     </td>
                 </tr>
@@ -424,7 +417,7 @@ const filteredCommonAreas = useMemo(() => {
                     <label htmlFor="environment" className="block text-sm font-medium leading-6 text-gray-900">Ambiente</label>
                     <div className="mt-2 flex items-stretch space-x-2">
                         <input id="environment" type="text" name="environment" value={formState.environment} onChange={handleInputChange} placeholder="Ex: Lobby de Hotel, Cozinha" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
-                        <button type="button" onClick={handleGetSuggestions} disabled={!formState.environment || isLoadingSuggestions} className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors">
+                        <button type="button" onClick={handleGetSuggestions} disabled={!formState.environment || isLoadingSuggestions} className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors">
                             <SparklesIcon className="w-5 h-5 mr-2" />
                             {isLoadingSuggestions ? 'Sugerindo...' : 'Sugerir'}
                         </button>
@@ -460,7 +453,7 @@ const filteredCommonAreas = useMemo(() => {
       {/* Preview Modal */}
       {isPreviewOpen && currentItem && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50" role="dialog" aria-modal="true" aria-labelledby="preview-title">
-          <div className="bg-white rounded-lg p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start">
               <h3 id="preview-title" className="text-2xl font-bold mb-4 text-primary-700">{`${currentItem.client} - ${currentItem.environment}`}</h3>
               <button onClick={closePreview} className="text-gray-500 hover:text-gray-800 text-3xl leading-none transition-colors" aria-label="Fechar visualização">&times;</button>
@@ -469,32 +462,32 @@ const filteredCommonAreas = useMemo(() => {
             <div className="mb-6 border-b pb-4">
                 <table className="w-full text-sm text-left text-gray-700">
                     <tbody>
-                        <tr className="border-b">
-                            <td className="py-2 font-semibold pr-4 w-1/3">Cliente</td>
-                            <td className="py-2">{currentItem.client || 'N/A'}</td>
+                        <tr className="border-b border-gray-200">
+                            <td className="py-2 font-semibold pr-4 w-1/3 text-gray-900">Cliente</td>
+                            <td className="py-2 text-gray-600">{currentItem.client || 'N/A'}</td>
                         </tr>
-                        <tr className="border-b">
-                            <td className="py-2 font-semibold pr-4">Localização</td>
-                            <td className="py-2">{currentItem.location || 'N/A'}</td>
+                        <tr className="border-b border-gray-200">
+                            <td className="py-2 font-semibold pr-4 text-gray-900">Localização</td>
+                            <td className="py-2 text-gray-600">{currentItem.location || 'N/A'}</td>
                         </tr>
-                        <tr className="border-b">
-                            <td className="py-2 font-semibold pr-4">Sub-localização</td>
-                            <td className="py-2">{currentItem.subLocation || 'N/A'}</td>
+                        <tr className="border-b border-gray-200">
+                            <td className="py-2 font-semibold pr-4 text-gray-900">Sub-localização</td>
+                            <td className="py-2 text-gray-600">{currentItem.subLocation || 'N/A'}</td>
                         </tr>
-                        <tr className="border-b">
-                            <td className="py-2 font-semibold pr-4">Ambiente</td>
-                            <td className="py-2">{currentItem.environment || 'N/A'}</td>
+                        <tr className="border-b border-gray-200">
+                            <td className="py-2 font-semibold pr-4 text-gray-900">Ambiente</td>
+                            <td className="py-2 text-gray-600">{currentItem.environment || 'N/A'}</td>
                         </tr>
                         <tr>
-                            <td className="py-2 font-semibold pr-4">Área</td>
-                            <td className="py-2">{currentItem.area || 0} m²</td>
+                            <td className="py-2 font-semibold pr-4 text-gray-900">Área</td>
+                            <td className="py-2 text-gray-600">{currentItem.area || 0} m²</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
             <h4 className="text-lg font-bold text-gray-800 mb-2">Atividades Planejadas</h4>
-             <div className="overflow-x-auto">
+             <div className="overflow-x-auto border border-gray-200 rounded-lg">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -505,12 +498,12 @@ const filteredCommonAreas = useMemo(() => {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {plannedActivitiesDetails.length > 0 ? plannedActivitiesDetails.map(detail => (
                             <tr key={detail.id}>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">{detail.activityName}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{detail.activityName}</td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{detail.periodicity}</td>
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={2} className="text-center py-6 text-gray-500 italic">Nenhuma atividade planejada para esta área.</td>
+                                <td colSpan={2} className="text-center py-6 text-gray-500">Nenhuma atividade planejada para esta área.</td>
                             </tr>
                         )}
                     </tbody>
