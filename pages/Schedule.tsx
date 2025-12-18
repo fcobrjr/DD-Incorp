@@ -257,6 +257,26 @@ const Schedule: React.FC = () => {
         );
     };
 
+    const currentRangeText = useMemo(() => {
+        const formatDateShort = (d: Date) => {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = String(d.getFullYear()).slice(-2);
+            return `${day}/${month}/${year}`;
+        };
+
+        if (calendarViewMode === 'month') {
+            return currentCalendarDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+        }
+        if (calendarViewMode === 'week') {
+            const range = getWeekRange(currentCalendarDate);
+            const start = createSafeDate(range.startDate);
+            const end = createSafeDate(range.endDate);
+            return `Semana de ${formatDateShort(start)} a ${formatDateShort(end)}`;
+        }
+        return currentCalendarDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    }, [currentCalendarDate, calendarViewMode]);
+
     return (
         <div className="p-8">
             <PageHeader title="Agenda">
@@ -289,9 +309,7 @@ const Schedule: React.FC = () => {
                             <button onClick={handleNext} className="p-1.5 hover:bg-white rounded transition-all text-gray-400"> <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg></button>
                         </div>
                         <h3 className="text-md font-bold text-gray-700 capitalize">
-                            {calendarViewMode === 'month' && currentCalendarDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
-                            {calendarViewMode === 'week' && `Semana de ${currentCalendarDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}`}
-                            {calendarViewMode === 'day' && currentCalendarDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            {currentRangeText}
                         </h3>
                         <div className="bg-gray-100 p-1 rounded-lg flex gap-1 border border-gray-200">
                             <button onClick={() => setCalendarViewMode('month')} className={`px-4 py-1.5 text-[10px] font-bold uppercase rounded transition-all ${calendarViewMode === 'month' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Mês</button>
