@@ -10,8 +10,9 @@ export const suggestActivitiesForEnvironment = async (environment: string): Prom
 
     const prompt = `Você é um especialista em gestão de facilities. Sugira uma lista de atividades comuns de limpeza e manutenção para um(a) "${environment}". Responda apenas com um array JSON de strings, onde cada string é um nome de atividade curto e acionável. Por exemplo: ["Limpar pisos", "Limpar janelas", "Desinfetar superfícies"]. Não inclua nenhum outro texto ou explicação.`;
 
+    // FIX: Updated model to 'gemini-3-flash-preview' for basic text tasks as per coding guidelines.
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

@@ -44,7 +44,13 @@ const Team: React.FC = () => {
     notes: ''
   });
 
-  const [filterSector, setFilterSector] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    sector: '',
+    contractType: '',
+    status: 'Ativos' // 'Todos', 'Ativos', 'Inativos'
+  });
 
   const openModal = (item: TeamMember | null = null) => {
     setCurrentItem(item);
@@ -106,6 +112,20 @@ const Team: React.FC = () => {
     }
   };
 
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+        search: '',
+        sector: '',
+        contractType: '',
+        status: 'Ativos'
+    });
+  };
+
   const toggleDay = (day: string) => {
     setFormState(prev => {
         const currentDays = prev.unavailableDays || [];
@@ -135,14 +155,22 @@ const Team: React.FC = () => {
 
   const filteredMembers = useMemo(() => {
     return teamMembers.filter(member => {
-        if (filterSector && member.sector !== filterSector) return false;
+        if (filters.search) {
+            const term = filters.search.toLowerCase();
+            const matches = member.name.toLowerCase().includes(term) || member.role.toLowerCase().includes(term) || (member.cbo && member.cbo.includes(term));
+            if (!matches) return false;
+        }
+        if (filters.sector && member.sector !== filters.sector) return false;
+        if (filters.contractType && member.contractType !== filters.contractType) return false;
+        if (filters.status === 'Ativos' && !member.isActive) return false;
+        if (filters.status === 'Inativos' && member.isActive) return false;
         return true;
     }).sort((a, b) => a.name.localeCompare(b.name));
-  }, [teamMembers, filterSector]);
+  }, [teamMembers, filters]);
 
   return (
     <div className="p-8">
-      <PageHeader title="Equipes / Colaboradores">
+      <PageHeader title="Equipes">
         <button
           onClick={() => openModal()}
           className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-150"
@@ -152,27 +180,68 @@ const Team: React.FC = () => {
         </button>
       </PageHeader>
 
-      <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center space-x-4">
-        <div className="flex items-center text-gray-500">
+      <div className="mb-6 flex justify-end">
+        <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}
+        >
             <FilterIcon className="w-5 h-5 mr-2" />
-            <span className="text-sm font-medium">Filtros:</span>
-        </div>
-        <div>
-            <select
-                value={filterSector}
-                onChange={(e) => setFilterSector(e.target.value)}
-                className="block w-48 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6"
-            >
-                <option value="">Todos os Setores</option>
-                {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-        </div>
-        {filterSector && (
-             <button onClick={() => setFilterSector('')} className="text-sm text-primary-600 hover:text-primary-800 font-medium">
-                Limpar
-            </button>
-        )}
+            {showFilters ? 'Ocultar Filtros' : 'Filtros e Pesquisa'}
+        </button>
       </div>
+
+      {showFilters && (
+          <div className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                      <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-1">Pesquisa Global</label>
+                      <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <svg className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                              </svg>
+                          </div>
+                          <input
+                              type="text"
+                              id="search"
+                              name="search"
+                              value={filters.search}
+                              onChange={handleFilterChange}
+                              placeholder="Nome, cargo ou CBO..."
+                              className="block w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                          />
+                      </div>
+                  </div>
+
+                  <div>
+                      <label htmlFor="sector" className="block text-sm font-semibold text-gray-700 mb-1">Setor</label>
+                      <select name="sector" id="sector" value={filters.sector} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5">
+                          <option value="">Todos os Setores</option>
+                          {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="contractType" className="block text-sm font-semibold text-gray-700 mb-1">Tipo Contrato</label>
+                      <select name="contractType" id="contractType" value={filters.contractType} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5">
+                          <option value="">Todos os Tipos</option>
+                          {CONTRACT_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="status" className="block text-sm font-semibold text-gray-700 mb-1">Situação</label>
+                      <select name="status" id="status" value={filters.status} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5">
+                          <option value="Todos">Todos (Ativos + Inativos)</option>
+                          <option value="Ativos">Somente Ativos</option>
+                          <option value="Inativos">Somente Inativos</option>
+                      </select>
+                  </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                  <button type="button" onClick={clearFilters} className="text-sm font-semibold text-primary-600 hover:text-primary-700 underline px-4 py-2">Limpar todos os filtros</button>
+              </div>
+          </div>
+      )}
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
@@ -220,8 +289,8 @@ const Team: React.FC = () => {
               </tr>
             )) : (
                 <tr>
-                    <td colSpan={5} className="text-center py-12 text-gray-500">
-                        {filterSector ? `Nenhum colaborador encontrado no setor de ${filterSector}.` : 'Nenhum colaborador cadastrado.'}
+                    <td colSpan={5} className="text-center py-12 text-gray-500 font-medium italic">
+                        Nenhum colaborador encontrado com os critérios de pesquisa.
                     </td>
                 </tr>
             )}
@@ -234,12 +303,7 @@ const Team: React.FC = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center z-10">
                 <h3 className="text-xl font-semibold text-gray-900">{currentItem ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-500">
-                    <span className="sr-only">Fechar</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                <button onClick={closeModal} className="text-gray-400 hover:text-gray-500 transition-colors text-3xl">&times;</button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6">
@@ -319,21 +383,19 @@ const Team: React.FC = () => {
                             <div>
                                 <label htmlFor="cleaningSpeedVacantDirty" className="block text-sm font-medium leading-6 text-purple-900">Tempo Limpeza - Vago Sujo (min)</label>
                                 <input type="number" id="cleaningSpeedVacantDirty" name="cleaningSpeedVacantDirty" value={formState.cleaningSpeedVacantDirty} onChange={handleInputChange} className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-purple-300 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6" />
-                                <p className="text-xs text-purple-600 mt-1">Sugerido: 25 min</p>
                             </div>
                             <div>
                                 <label htmlFor="cleaningSpeedStay" className="block text-sm font-medium leading-6 text-purple-900">Tempo Limpeza - Estada (min)</label>
                                 <input type="number" id="cleaningSpeedStay" name="cleaningSpeedStay" value={formState.cleaningSpeedStay} onChange={handleInputChange} className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-purple-300 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6" />
-                                <p className="text-xs text-purple-600 mt-1">Sugerido: 10 min</p>
                             </div>
                              <div>
-                                <label htmlFor="governanceMaxWeeklyHours" className="block text-sm font-medium leading-6 text-purple-900">Carga Horária Gov. (Opcional)</label>
+                                <label htmlFor="governanceMaxWeeklyHours" className="block text-sm font-medium leading-6 text-purple-900">Carga Horária Gov.</label>
                                 <input type="number" id="governanceMaxWeeklyHours" name="governanceMaxWeeklyHours" value={formState.governanceMaxWeeklyHours || ''} onChange={handleInputChange} placeholder="Mesmo do contrato se vazio" className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-purple-300 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6" />
                             </div>
                             
                             <div className="md:col-span-3">
                                 <label htmlFor="operationalRestrictions" className="block text-sm font-medium leading-6 text-purple-900">Restrições Operacionais</label>
-                                <textarea id="operationalRestrictions" name="operationalRestrictions" value={formState.operationalRestrictions} onChange={handleInputChange} rows={2} placeholder="Ex: Não trabalha no turno da noite; Não pode carregar peso excessivo..." className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-purple-300 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6"></textarea>
+                                <textarea id="operationalRestrictions" name="operationalRestrictions" value={formState.operationalRestrictions} onChange={handleInputChange} rows={2} className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-purple-300 focus:ring-2 focus:ring-inset focus:ring-purple-600 sm:text-sm sm:leading-6"></textarea>
                             </div>
 
                             <div className="md:col-span-3">
@@ -354,70 +416,19 @@ const Team: React.FC = () => {
                                         </button>
                                     ))}
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">Clique para marcar os dias em que o colaborador <strong>não pode</strong> trabalhar.</p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                 {/* 4. Dados para Escala (Histórico) */}
+                 {/* 4. Histórico */}
                  <div>
-                    <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2 mb-4">Dados para Escala (Histórico)</h4>
-                    
-                    {formState.contractType === 'Intermitente' && (
-                        <div className="mb-4 bg-amber-50 border-l-4 border-amber-400 p-4">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-amber-700">
-                                        <strong>Atenção para Intermitentes:</strong> É crucial manter o histórico de convocações e garantir períodos de inatividade para evitar descaracterização do contrato.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
+                    <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2 mb-4">Escala & Histórico</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                             <label htmlFor="lastFullOffWeek" className="block text-sm font-medium leading-6 text-gray-900">Última Semana de Folga Completa</label>
+                             <label htmlFor="lastFullOffWeek" className="block text-sm font-medium leading-6 text-gray-900">Última Semana de Folga</label>
                              <input type="month" id="lastFullOffWeek" name="lastFullOffWeek" value={formState.lastFullOffWeek} onChange={handleInputChange} className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
-                             <p className="text-xs text-gray-500 mt-1">Referência para cálculo de descanso obrigatório.</p>
                         </div>
-                        
-                        <div className="md:col-span-2">
-                             <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">Histórico Recente (Visualização)</label>
-                             <div className="bg-gray-50 rounded-md border border-gray-200 overflow-hidden">
-                                {formState.historyWeeks && formState.historyWeeks.length > 0 ? (
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-100">
-                                            <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semana</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turno Predominante</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {formState.historyWeeks.map((hw, idx) => (
-                                                <tr key={idx}>
-                                                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">{hw.week}</td>
-                                                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{hw.hours}h</td>
-                                                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{hw.predominantShift || '-'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    <div className="p-4 text-center text-sm text-gray-500">
-                                        Nenhum histórico registrado ainda. Os dados serão populados automaticamente pelo motor de escalas.
-                                    </div>
-                                )}
-                             </div>
-                        </div>
-
                         <div className="md:col-span-2">
                             <label htmlFor="notes" className="block text-sm font-medium leading-6 text-gray-900">Observações Gerais</label>
                             <textarea id="notes" name="notes" value={formState.notes} onChange={handleInputChange} rows={3} className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"></textarea>
@@ -426,9 +437,9 @@ const Team: React.FC = () => {
                  </div>
 
               </div>
-              <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4 bg-white sticky bottom-0">
-                <button type="button" onClick={closeModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Salvar Colaborador</button>
+              <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4">
+                <button type="button" onClick={closeModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 transition-colors">Salvar Colaborador</button>
               </div>
             </form>
           </div>

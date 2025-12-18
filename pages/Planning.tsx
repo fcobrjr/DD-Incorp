@@ -4,6 +4,8 @@ import { AppContext } from '../App';
 import { WorkPlan, PlannedActivity, Periodicity, Activity, CorrelatedResource } from '../types';
 import { TrashIcon, EditIcon, PlusIcon, LayoutGridIcon, ListIcon, FilterIcon } from '../components/icons';
 import PageHeader from '../components/PageHeader';
+import InfoTooltip from '../components/InfoTooltip';
+import SearchableSelect from '../components/SearchableSelect';
 
 const PERIODICITY_OPTIONS: string[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
 
@@ -38,15 +40,26 @@ const Planning: React.FC = () => {
     const [currentPlan, setCurrentPlan] = useState<WorkPlan | null>(null);
     const [formState, setFormState] = useState<WorkPlan | null>(null);
     
+    // UI State for Activity Addition (Combobox value)
+    const [selectedActivityForAdd, setSelectedActivityForAdd] = useState('');
+
     // State for nested activity editing modal
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
     const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
-    const [activityFormState, setActivityFormState] = useState<Omit<Activity, 'id'>>({ name: '', description: '', sla: 0, tools: [], materials: [] });
+    const [activityFormState, setActivityFormState] = useState<Omit<Activity, 'id'>>({ 
+      name: '', 
+      description: '', 
+      sla: 0, 
+      slaCoefficient: 0,
+      tools: [], 
+      materials: [] 
+    });
 
     // UI State
     const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
+        search: '',
         client: '',
         location: '',
         subLocation: '',
@@ -76,6 +89,7 @@ const Planning: React.FC = () => {
 
     const clearFilters = () => {
         setFilters({
+            search: '',
             client: '',
             location: '',
             subLocation: '',
@@ -105,10 +119,11 @@ const Planning: React.FC = () => {
     const openModal = (plan: WorkPlan | null = null) => {
         setCurrentPlan(plan);
         setFormState(plan ? { ...JSON.parse(JSON.stringify(plan)), plannedActivities: plan.plannedActivities || [] } : {
-            id: Date.now().toString(),
+            id: `plan-${Date.now()}`,
             commonAreaId: '',
             plannedActivities: [],
         });
+        setSelectedActivityForAdd('');
         setIsModalOpen(true);
     };
 
@@ -118,10 +133,9 @@ const Planning: React.FC = () => {
         setFormState(null);
     };
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
-        const { name, value } = e.target;
-        if (name === 'commonAreaId' && !currentPlan) {
-            const existingPlan = workPlans.find(p => p.commonAreaId === value);
+    const handleAreaChange = (val: string) => {
+        if (!currentPlan) {
+            const existingPlan = workPlans.find(p => p.commonAreaId === val);
             if (existingPlan) {
                 alert("Já existe um plano para esta Área Comum. Editando o plano existente.");
                 setCurrentPlan(existingPlan);
@@ -129,18 +143,22 @@ const Planning: React.FC = () => {
                 return;
             }
         }
-        setFormState(prev => prev ? { ...prev, [name]: value } : null);
+        setFormState(prev => prev ? { ...prev, commonAreaId: val } : null);
     };
     
     const addActivityToPlan = (activityId: string) => {
-        if (!formState || !activityId || (formState.plannedActivities || []).some(p => p.activityId === activityId)) return;
+        if (!formState || !activityId || (formState.plannedActivities || []).some(p => p.activityId === activityId)) {
+            setSelectedActivityForAdd('');
+            return;
+        }
         
         const newPlannedActivity: PlannedActivity = {
-            id: `${Date.now()}-${activityId}`,
+            id: `pa-${Date.now()}-${activityId}`,
             activityId,
             periodicity: 'Diário',
         };
         setFormState(prev => prev ? { ...prev, plannedActivities: [...(prev.plannedActivities || []), newPlannedActivity] } : null);
+        setSelectedActivityForAdd(''); 
     };
 
     const removeActivityFromPlan = (plannedActivityId: string) => {
@@ -176,7 +194,7 @@ const Planning: React.FC = () => {
     };
     
     const handleDelete = (planId: string) => {
-        if (window.confirm("Tem certeza que deseja excluir este plano de trabalho?")) {
+        if (window.confirm("Tem certeza que deseja excluir este plano de trabalho? Todas as tarefas agendadas futuras também serão removidas.")) {
             setWorkPlans(prev => prev.filter(p => p.id !== planId));
         }
     };
@@ -215,15 +233,8 @@ const Planning: React.FC = () => {
         setActivityFormState(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
     };
 
-    const addActivityResource = (type: 'tools' | 'materials') => {
-      const selectElement = document.getElementById(`activity-modal-select-${type}`) as HTMLSelectElement;
-      if (!selectElement) return;
-
-      const resourceId = selectElement.value;
-      if (!resourceId || (activityFormState[type] || []).some(r => r.resourceId === resourceId)) {
-        selectElement.value = "";
-        return;
-      };
+    const addActivityResource = (type: 'tools' | 'materials', resourceId: string) => {
+      if (!resourceId || (activityFormState[type] || []).some(r => r.resourceId === resourceId)) return;
       
       let quantity = 1;
       if (type === 'materials') {
@@ -235,7 +246,6 @@ const Planning: React.FC = () => {
 
       const newResource: CorrelatedResource = { resourceId, quantity };
       setActivityFormState(prev => ({ ...prev, [type]: [...(prev[type] || []), newResource] }));
-      selectElement.value = "";
     };
 
     const updateActivityResourceQuantity = (type: 'tools' | 'materials', resourceId: string, quantity: number) => {
@@ -262,17 +272,19 @@ const Planning: React.FC = () => {
     const renderActivityResourceList = (type: 'tools' | 'materials') => {
         const resourceList = type === 'tools' ? tools : materials;
         const title = type === 'tools' ? 'Equipamentos' : 'Materiais';
+        const resourceOptions = resourceList.map(r => ({ value: r.id, label: `${r.name} (${r.unit})` }));
+
         return (
             <div className="mt-6">
                 <h4 className="text-lg font-medium leading-6 text-gray-900">{title}</h4>
                 <div className="mt-4">
-                  <label htmlFor={`activity-modal-select-${type}`} className="sr-only">Adicionar {title}</label>
                   <div className="flex items-stretch space-x-2">
-                      <select id={`activity-modal-select-${type}`} className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
-                          <option value="">Selecione para adicionar...</option>
-                          {resourceList.map(item => <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>)}
-                      </select>
-                      <button type="button" onClick={() => addActivityResource(type)} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 whitespace-nowrap">Adicionar</button>
+                      <SearchableSelect 
+                        options={resourceOptions}
+                        value=""
+                        onChange={(val) => addActivityResource(type, val)}
+                        placeholder={`Buscar ${title.toLowerCase()}...`}
+                      />
                   </div>
                 </div>
                 <div className="mt-4 space-y-3 max-h-48 overflow-y-auto pr-2">
@@ -349,13 +361,33 @@ const Planning: React.FC = () => {
 
     const getAreaName = (areaId: string): string => {
         const area = commonAreas.find(a => a.id === areaId);
-        return area ? `${area.client} - ${area.environment} (${area.location})` : 'Área Desconhecida';
+        if (!area) return 'Área Desconhecida';
+        const parts = [
+            area.client,
+            area.location,
+            area.subLocation,
+            area.environment
+        ].filter(Boolean);
+        return parts.join(' | ');
     }
 
     const filteredWorkPlans = useMemo(() => {
         return workPlans.filter(plan => {
             const area = commonAreas.find(a => a.id === plan.commonAreaId);
             if (!area) return false;
+
+            if (filters.search) {
+                const term = filters.search.toLowerCase();
+                const matches = 
+                    area.client.toLowerCase().includes(term) ||
+                    area.location.toLowerCase().includes(term) ||
+                    area.environment.toLowerCase().includes(term) ||
+                    (plan.plannedActivities || []).some(pa => {
+                        const act = activities.find(a => a.id === pa.activityId);
+                        return act?.name.toLowerCase().includes(term);
+                    });
+                if (!matches) return false;
+            }
             
             if (filters.client && area.client !== filters.client) return false;
             if (filters.location && area.location !== filters.location) return false;
@@ -364,7 +396,7 @@ const Planning: React.FC = () => {
             if (filters.activityId && !(plan.plannedActivities || []).some(pa => pa.activityId === filters.activityId)) return false;
             return true;
         });
-    }, [workPlans, filters, commonAreas]);
+    }, [workPlans, filters, commonAreas, activities]);
 
 
     const flattenedActivities = useMemo(() => {
@@ -373,6 +405,11 @@ const Planning: React.FC = () => {
                 (plan.plannedActivities || []).map(pa => {
                     const commonArea = commonAreas.find(ca => ca.id === plan.commonAreaId);
                     const activity = activities.find(a => a.id === pa.activityId);
+                    
+                    const areaSize = commonArea?.area || 0;
+                    const calculatedSla = (activity?.sla || 0) + 
+                        (activity?.slaCoefficient ? (activity.slaCoefficient * areaSize) : 0);
+
                     return {
                         id: pa.id,
                         periodicity: pa.periodicity,
@@ -381,13 +418,21 @@ const Planning: React.FC = () => {
                         subLocation: commonArea?.subLocation || 'N/A',
                         environment: commonArea?.environment || 'N/A',
                         activityName: activity?.name || 'N/A',
-                        activitySla: activity?.sla || 0,
+                        activitySla: calculatedSla,
                         originalPlan: plan,
                     };
                 })
             )
             .sort((a, b) => a.client.localeCompare(b.client) || a.location.localeCompare(b.location) || a.subLocation.localeCompare(b.subLocation) || a.environment.localeCompare(b.environment) || a.activityName.localeCompare(b.activityName));
     }, [filteredWorkPlans, commonAreas, activities]);
+
+    const commonAreaOptions = useMemo(() => 
+        commonAreas.map(a => ({ value: a.id, label: getAreaName(a.id) })), 
+    [commonAreas]);
+
+    const activityOptions = useMemo(() => 
+        activities.map(a => ({ value: a.id, label: a.name })), 
+    [activities]);
 
 
     return (
@@ -396,6 +441,7 @@ const Planning: React.FC = () => {
                 <div className="flex items-center space-x-2">
                      <div className="bg-gray-200 p-1 rounded-lg flex items-center">
                         <button 
+                            type="button"
                             onClick={() => setViewMode('card')}
                             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${viewMode === 'card' ? 'bg-white text-primary-600 shadow' : 'text-gray-600 hover:bg-gray-300/50'}`}
                             aria-label="Visualização em Cards"
@@ -403,6 +449,7 @@ const Planning: React.FC = () => {
                             <LayoutGridIcon className="w-5 h-5"/>
                         </button>
                         <button 
+                            type="button"
                             onClick={() => setViewMode('table')}
                             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${viewMode === 'table' ? 'bg-white text-primary-600 shadow' : 'text-gray-600 hover:bg-gray-300/50'}`}
                              aria-label="Visualização em Tabela"
@@ -411,124 +458,147 @@ const Planning: React.FC = () => {
                         </button>
                     </div>
                     <button
+                        type="button"
                         onClick={() => openModal()}
                         className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-150"
                     >
                         <PlusIcon className="w-5 h-5 mr-2" />
-                        Novo Plano de Trabalho
+                        Novo Plano
                     </button>
                 </div>
             </PageHeader>
             
-            <div className="mb-6">
+            <div className="mb-6 flex justify-end">
                 <button
+                    type="button"
                     onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
+                    className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}
                 >
                     <FilterIcon className="w-5 h-5 mr-2" />
-                    {showFilters ? 'Ocultar Filtros Avançados' : 'Mostrar Filtros Avançados'}
+                    {showFilters ? 'Ocultar Filtros' : 'Filtros e Pesquisa'}
                 </button>
-                {showFilters && (
-                    <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                            <div>
-                                <label htmlFor="client" className="block text-sm font-medium text-gray-700">Cliente</label>
-                                <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
-                                    <option value="">Todos</option>
-                                    {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label htmlFor="location" className="block text-sm font-medium text-gray-700">Local</label>
-                                <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
-                                    <option value="">Todos</option>
-                                    {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label htmlFor="subLocation" className="block text-sm font-medium text-gray-700">Sublocal</label>
-                                <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
-                                    <option value="">Todos</option>
-                                    {uniqueSubLocations.map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label htmlFor="environment" className="block text-sm font-medium text-gray-700">Ambiente</label>
-                                <select name="environment" id="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
-                                    <option value="">Todos</option>
-                                    {uniqueEnvironments.map(env => <option key={env} value={env}>{env}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label htmlFor="activityId" className="block text-sm font-medium text-gray-700">Atividade</label>
-                                <select name="activityId" id="activityId" value={filters.activityId} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
-                                    <option value="">Todas</option>
-                                    {activities.map(act => <option key={act.id} value={act.id}>{act.name}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        <div className="mt-4 flex justify-end">
-                            <button onClick={clearFilters} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Limpar Filtros</button>
-                        </div>
-                    </div>
-                )}
             </div>
 
+            {showFilters && (
+                <div className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                        <div>
+                            <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-1">Pesquisa Global</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    id="search"
+                                    name="search"
+                                    value={filters.search}
+                                    onChange={handleFilterChange}
+                                    placeholder="Termo livre..."
+                                    className="block w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="client" className="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
+                            <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5">
+                                <option value="">Todos</option>
+                                {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-1">Local</label>
+                            <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                                <option value="">Todos</option>
+                                {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="subLocation" className="block text-sm font-semibold text-gray-700 mb-1">Sublocal</label>
+                            <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                                <option value="">Todos</option>
+                                {uniqueSubLocations.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="activityId" className="block text-sm font-semibold text-gray-700 mb-1">Atividade</label>
+                            <select name="activityId" id="activityId" value={filters.activityId} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5">
+                                <option value="">Todas</option>
+                                {activities.map(act => <option key={act.id} value={act.id}>{act.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <button type="button" onClick={clearFilters} className="text-sm font-semibold text-primary-600 hover:text-primary-700 underline px-4 py-2">Limpar todos os filtros</button>
+                    </div>
+                </div>
+            )}
+
            {viewMode === 'card' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {filteredWorkPlans.length > 0 ? filteredWorkPlans.map((plan) => {
                         const area = commonAreas.find(a => a.id === plan.commonAreaId);
                         if (!area) return null;
                         const plannedActivities = plan.plannedActivities || [];
                         
                         return (
-                            <div key={plan.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
-                                <div className="p-5 border-b border-gray-100 flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-semibold text-gray-800 truncate">{area.client} - {area.location}</h3>
-                                        <p className="text-sm text-gray-500 truncate">{area.subLocation}</p>
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mt-1">{area.environment}</p>
-                                        <div className="mt-3 text-xs text-gray-600 space-x-4">
-                                            <span className="bg-gray-100 rounded-full px-3 py-1 inline-block">
-                                                {plannedActivities.length} {plannedActivities.length === 1 ? 'atividade' : 'atividades'}
-                                            </span>
+                            <div key={plan.id} className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col transition-all duration-300 hover:shadow-md hover:ring-1 hover:ring-primary-100 overflow-hidden">
+                                <div className="p-4 border-b border-gray-100 relative group/header">
+                                    <div className="pr-12">
+                                        <h3 className="font-bold text-gray-900 line-clamp-1 text-sm leading-tight" title={area.client}>{area.client}</h3>
+                                        <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{area.location} {area.subLocation ? `· ${area.subLocation}` : ''}</p>
+                                        <div className="mt-2 inline-flex items-center rounded-md bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary-700 uppercase tracking-wider">
+                                            {area.environment}
                                         </div>
                                     </div>
-                                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-                                        <button onClick={() => openModal(plan)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label={`Editar plano para ${getAreaName(plan.commonAreaId)}`}>
-                                            <EditIcon className="w-5 h-5"/>
+                                    
+                                     <div className="absolute top-3 right-2 flex flex-col items-center space-y-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
+                                        <button type="button" onClick={() => openModal(plan)} className="p-1.5 rounded-full bg-white shadow-sm border border-gray-100 text-primary-600 hover:bg-primary-50 transition-colors" aria-label="Editar">
+                                            <EditIcon className="w-4 h-4"/>
                                         </button>
-                                        <button onClick={() => handleDelete(plan.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors" aria-label={`Excluir plano para ${getAreaName(plan.commonAreaId)}`}>
-                                            <TrashIcon className="w-5 h-5"/>
+                                        <button type="button" onClick={() => handleDelete(plan.id)} className="p-1.5 rounded-full bg-white shadow-sm border border-gray-100 text-red-600 hover:bg-red-50 transition-colors" aria-label="Excluir">
+                                            <TrashIcon className="w-4 h-4"/>
                                         </button>
                                     </div>
                                 </div>
                                 
-                                <div className="p-3 space-y-2 bg-gray-50/75 flex-1 max-h-60 overflow-y-auto">
+                                <div className="p-2 space-y-1.5 bg-gray-50/50 flex-1 max-h-52 overflow-y-auto">
                                     {plannedActivities.length > 0 ? plannedActivities.map(pa => {
                                         const activity = activities.find(a => a.id === pa.activityId);
                                         const periodStyle = getPeriodicityStyle(pa.periodicity);
                                         return (
-                                            <div key={pa.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200/80 shadow-sm">
-                                                <p className="font-medium text-sm text-gray-700">{activity?.name || 'Atividade desconhecida'}</p>
-                                                <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${periodStyle.bg} ${periodStyle.text}`}>{pa.periodicity}</span>
+                                            <div key={pa.id} className="flex flex-col gap-1 bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
+                                                <p className="font-semibold text-[11px] text-gray-800 line-clamp-2 leading-snug">{activity?.name || 'Atividade desconhecida'}</p>
+                                                <div className="flex justify-between items-center mt-1">
+                                                    <span className={`text-[9px] font-bold rounded-full px-1.5 py-0.5 ${periodStyle.bg} ${periodStyle.text}`}>{pa.periodicity}</span>
+                                                </div>
                                             </div>
                                         );
                                     }) : (
-                                        <div className="text-center text-sm text-gray-500 py-4">Nenhuma atividade neste plano.</div>
+                                        <div className="text-center text-[10px] text-gray-400 py-6 italic">Sem atividades</div>
                                     )}
+                                </div>
+                                
+                                <div className="px-4 py-2 border-t border-gray-100 flex justify-between items-center bg-white">
+                                     <span className="text-[10px] font-medium text-gray-500">
+                                        {plannedActivities.length} {plannedActivities.length === 1 ? 'item' : 'itens'}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-gray-400">{area.area}m²</span>
                                 </div>
                             </div>
                         )
                     }) : (
-                         <div className="sm:col-span-2 lg:col-span-3 text-center py-16 bg-white rounded-lg shadow-sm border">
-                            <h3 className="text-xl font-semibold text-gray-700">Nenhum plano de trabalho encontrado.</h3>
-                            <p className="text-gray-500 mt-2">Ajuste os filtros ou clique em "Novo Plano de Trabalho" para começar.</p>
+                         <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5 text-center py-16 bg-white rounded-xl shadow-sm border">
+                            <h3 className="text-xl font-semibold text-gray-700">Nenhum plano encontrado.</h3>
+                            <p className="text-gray-500 mt-2">Ajuste os filtros ou crie um novo.</p>
                         </div>
                     )}
                 </div>
             ) : (
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -538,7 +608,12 @@ const Planning: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SLA (min)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                                  <div className="flex items-center">
+                                    SLA Estimado
+                                    <InfoTooltip side="bottom" text="Tempo total calculado: (SLA Fixo) + (Área × SLA Proporcional)." />
+                                  </div>
+                                </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações do Plano</th>
                             </tr>
                         </thead>
@@ -546,7 +621,7 @@ const Planning: React.FC = () => {
                             {flattenedActivities.length > 0 ? flattenedActivities.map(item => {
                                 const periodStyle = getPeriodicityStyle(item.periodicity);
                                 return (
-                                <tr key={item.id}>
+                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.client}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.location}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.subLocation}</td>
@@ -555,11 +630,16 @@ const Planning: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${periodStyle.bg} ${periodStyle.text}`}>{item.periodicity}</span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.activitySla}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold">{item.activitySla.toFixed(0)} min</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button onClick={() => openModal(item.originalPlan)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label={`Editar plano para ${item.client}`}>
-                                            <EditIcon className="w-5 h-5"/>
-                                        </button>
+                                        <div className="flex justify-end items-center space-x-1">
+                                            <button type="button" onClick={() => openModal(item.originalPlan)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label={`Editar plano para ${item.client}`}>
+                                                <EditIcon className="w-5 h-5"/>
+                                            </button>
+                                            <button type="button" onClick={() => handleDelete(item.originalPlan.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors" aria-label={`Excluir plano para ${item.client}`}>
+                                                <TrashIcon className="w-5 h-5"/>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             )}) : (
@@ -582,23 +662,37 @@ const Planning: React.FC = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 <div className="lg:col-span-2 space-y-6">
                                     <div>
-                                        <label htmlFor="commonAreaId" className="block text-sm font-medium leading-6 text-gray-900">Área Comum</label>
+                                        <label className="block text-sm font-medium leading-6 text-gray-900">Área Comum</label>
                                         <div className="mt-2">
-                                            <select id="commonAreaId" name="commonAreaId" value={formState.commonAreaId} onChange={handleFormChange} disabled={!!currentPlan} className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-100 disabled:cursor-not-allowed" required>
-                                                <option value="">Selecione uma área...</option>
-                                                {commonAreas.map(area => <option key={area.id} value={area.id}>{getAreaName(area.id)}</option>)}
-                                            </select>
+                                            <SearchableSelect 
+                                                options={commonAreaOptions}
+                                                value={formState.commonAreaId}
+                                                onChange={handleAreaChange}
+                                                disabled={!!currentPlan}
+                                                placeholder="Buscar por cliente, local, sublocal ou ambiente..."
+                                            />
                                         </div>
                                     </div>
 
                                     <div>
                                         <h4 className="font-medium text-gray-800 mb-2">Atividades</h4>
                                         <div className="flex items-stretch gap-x-2 mb-4">
-                                            <select id="activity-select" defaultValue="" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
-                                                <option value="" disabled>Selecione para adicionar...</option>
-                                                {activities.map(act => <option key={act.id} value={act.id}>{act.name}</option>)}
-                                            </select>
-                                            <button type="button" onClick={() => addActivityToPlan((document.getElementById('activity-select') as HTMLSelectElement).value)} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 whitespace-nowrap">Adicionar</button>
+                                            <div className="flex-1">
+                                                <SearchableSelect 
+                                                    options={activityOptions}
+                                                    value={selectedActivityForAdd}
+                                                    onChange={setSelectedActivityForAdd}
+                                                    placeholder="Buscar atividade no catálogo..."
+                                                />
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => addActivityToPlan(selectedActivityForAdd)} 
+                                                disabled={!selectedActivityForAdd}
+                                                className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 whitespace-nowrap disabled:opacity-50"
+                                            >
+                                                Adicionar
+                                            </button>
                                         </div>
                                         
                                         <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
@@ -608,10 +702,22 @@ const Planning: React.FC = () => {
                                                 const isCustom = plannedAct.periodicity.startsWith('Cada ');
                                                 const customDays = isCustom ? plannedAct.periodicity.split(' ')[1] : 3;
 
+                                                const currentArea = commonAreas.find(a => a.id === formState.commonAreaId);
+                                                const areaSize = currentArea?.area || 0;
+                                                
+                                                const calculatedSla = (activity?.sla || 0) + 
+                                                    (activity?.slaCoefficient ? (activity.slaCoefficient * areaSize) : 0);
+
                                                 return activity ? (
                                                     <div key={plannedAct.id} className="bg-gray-50 p-4 rounded-lg border">
                                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                                            <p className="font-medium text-sm text-gray-800 flex-1">{activity.name}</p>
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-sm text-gray-800">{activity.name}</p>
+                                                                <p className="text-xs text-primary-600 font-bold mt-1">
+                                                                  SLA Calculado: {calculatedSla.toFixed(0)} min
+                                                                  <InfoTooltip text={`Base: ${activity.sla}min + (${areaSize}m² × ${activity.slaCoefficient || 0}min)`} />
+                                                                </p>
+                                                            </div>
                                                             <div className="flex items-center gap-x-2 flex-wrap">
                                                                 <div className="flex items-center gap-2">
                                                                     <select 
@@ -732,7 +838,7 @@ const Planning: React.FC = () => {
                     <h3 className="text-2xl font-semibold text-gray-900 mb-6">Editar Atividade</h3>
                     <form onSubmit={handleActivityFormSubmit}>
                       <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                            <div className="md:col-span-2">
                               <label htmlFor="name" className="block text-sm font-medium leading-6 text-gray-900">Nome da Atividade</label>
                               <div className="mt-2">
@@ -740,9 +846,15 @@ const Planning: React.FC = () => {
                               </div>
                             </div>
                             <div>
-                                <label htmlFor="sla" className="block text-sm font-medium leading-6 text-gray-900">SLA (minutos)</label>
+                                <label htmlFor="sla" className="block text-sm font-medium leading-6 text-gray-900">SLA Fixo (min)</label>
                                 <div className="mt-2">
                                    <input type="number" name="sla" id="sla" value={activityFormState.sla} onChange={handleActivityInputChange} className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                                </div>
+                            </div>
+                            <div>
+                                <label htmlFor="slaCoefficient" className="block text-sm font-medium leading-6 text-gray-900">SLA por m²</label>
+                                <div className="mt-2">
+                                   <input type="number" name="slaCoefficient" id="slaCoefficient" step="0.001" value={activityFormState.slaCoefficient} onChange={handleActivityInputChange} className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
                                 </div>
                             </div>
                         </div>

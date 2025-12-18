@@ -19,7 +19,8 @@ export interface CorrelatedResource {
 
 export interface Activity extends BaseItem {
   description: string;
-  sla: number; // Service Level Agreement in minutes
+  sla: number; // Fixed SLA in minutes
+  slaCoefficient?: number; // SLA in minutes per m²
   tools: CorrelatedResource[];
   materials: CorrelatedResource[];
 }

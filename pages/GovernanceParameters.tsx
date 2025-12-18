@@ -38,8 +38,8 @@ const GovernanceParametersPage: React.FC = () => {
         alert('Parâmetros salvos com sucesso!');
     };
 
-    const handleReset = () => {
-        if (window.confirm('Tem certeza que deseja restaurar os padrões? Todas as alterações não salvas serão perdidas.')) {
+    const handleResetParams = () => {
+        if (window.confirm('Tem certeza que deseja restaurar os padrões de configuração?')) {
             setFormState(DEFAULT_GOVERNANCE_PARAMETERS);
             setGovernanceParameters(DEFAULT_GOVERNANCE_PARAMETERS);
             setIsDirty(false);
@@ -50,7 +50,7 @@ const GovernanceParametersPage: React.FC = () => {
         <div className="p-8 pb-20">
             <PageHeader title="Parâmetros da Governança">
                 <div className="flex items-center space-x-3">
-                    <button onClick={handleReset} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                    <button onClick={handleResetParams} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors">
                         Restaurar Padrões
                     </button>
                     <button 

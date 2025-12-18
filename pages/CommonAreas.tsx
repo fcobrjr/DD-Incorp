@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, useRef, useMemo } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
@@ -8,7 +9,13 @@ import { suggestActivitiesForEnvironment } from '../services/geminiService';
 declare var XLSX: any;
 
 const CommonAreas: React.FC = () => {
-  const { commonAreas, setCommonAreas, activities, setActivities, workPlans } = useContext(AppContext)!;
+  const { 
+    commonAreas, setCommonAreas, 
+    activities, setActivities, 
+    workPlans, setWorkPlans,
+    setScheduledActivities 
+  } = useContext(AppContext)!;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<CommonArea | null>(null);
@@ -20,6 +27,7 @@ const CommonAreas: React.FC = () => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
+    search: '',
     client: '',
     location: '',
     subLocation: '',
@@ -66,7 +74,6 @@ const CommonAreas: React.FC = () => {
     if (activities.some(act => act.name.toLowerCase() === suggestionName.toLowerCase())) {
         return;
     }
-    // FIX: Added default sla value to satisfy the Activity type.
     const newActivity: Omit<Activity, 'id'> = {
         name: suggestionName,
         description: `Atividade sugerida para ambiente: ${formState.environment}`,
@@ -74,7 +81,7 @@ const CommonAreas: React.FC = () => {
         tools: [],
         materials: [],
     };
-    setActivities(prev => [...prev, { ...newActivity, id: Date.now().toString() }]);
+    setActivities(prev => [...prev, { ...newActivity, id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` }]);
     setSuggestions(prev => prev.filter(s => s !== suggestionName));
   };
 
@@ -84,13 +91,19 @@ const CommonAreas: React.FC = () => {
     if (currentItem) {
       setCommonAreas(prev => prev.map(a => a.id === currentItem.id ? { ...formState, id: currentItem.id } : a));
     } else {
-      setCommonAreas(prev => [...prev, { ...formState, id: Date.now().toString() }]);
+      setCommonAreas(prev => [...prev, { ...formState, id: `area-${Date.now()}` }]);
     }
     closeModal();
   };
 
   const handleDelete = (id: string) => {
-    setCommonAreas(prev => prev.filter(a => a.id !== id));
+    if (window.confirm("Tem certeza que deseja excluir esta área comum? Isso removerá permanentemente todos os Planos de Trabalho e Agendamentos vinculados a ela.")) {
+        const plansToDelete = workPlans.filter(wp => wp.commonAreaId === id);
+        const planIds = plansToDelete.map(p => p.id);
+        setScheduledActivities(prev => prev.filter(sa => !planIds.includes(sa.workPlanId)));
+        setWorkPlans(prev => prev.filter(wp => wp.commonAreaId !== id));
+        setCommonAreas(prev => prev.filter(a => a.id !== id));
+    }
   };
   
   const handleExport = () => {
@@ -118,7 +131,7 @@ const CommonAreas: React.FC = () => {
                 `${area.client}|${area.location}|${area.subLocation}|${area.environment}`.toLowerCase();
 
             const newAreas: CommonArea[] = json.map((row: any, index: number) => ({
-                id: `${Date.now()}-${index}`,
+                id: `area-import-${Date.now()}-${index}`,
                 client: row.client || '',
                 location: row.location || '',
                 subLocation: row.subLocation || '',
@@ -164,11 +177,10 @@ const CommonAreas: React.FC = () => {
         );
 }, [workPlans, activities, currentItem]);
 
-const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const { name, value } = e.target;
     setFilters(prev => {
         const newFilters = { ...prev, [name]: value };
-        // Reset dependent filters when a parent filter changes
         if (name === 'client') {
             newFilters.location = '';
             newFilters.subLocation = '';
@@ -187,6 +199,7 @@ const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 
 const clearFilters = () => {
     setFilters({
+        search: '',
         client: '',
         location: '',
         subLocation: '',
@@ -214,6 +227,17 @@ const uniqueEnvironments = useMemo(() => {
 
 const filteredCommonAreas = useMemo(() => {
     return commonAreas.filter(area => {
+        if (filters.search) {
+            const searchTerm = filters.search.toLowerCase();
+            const matchesSearch = 
+                area.client.toLowerCase().includes(searchTerm) ||
+                area.location.toLowerCase().includes(searchTerm) ||
+                area.subLocation.toLowerCase().includes(searchTerm) ||
+                area.environment.toLowerCase().includes(searchTerm);
+            
+            if (!matchesSearch) return false;
+        }
+
         if (filters.client && area.client !== filters.client) return false;
         if (filters.location && area.location !== filters.location) return false;
         if (filters.subLocation && area.subLocation !== filters.subLocation) return false;
@@ -226,7 +250,7 @@ const filteredCommonAreas = useMemo(() => {
   return (
     <div className="p-8">
       <PageHeader title="Áreas Comuns">
-        <button onClick={handleExport} className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 text-sm font-medium">
+        <button type="button" onClick={handleExport} className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 text-sm font-medium">
             <DownloadIcon className="w-5 h-5 mr-2" />
             Exportar Template
         </button>
@@ -237,11 +261,12 @@ const filteredCommonAreas = useMemo(() => {
             style={{ display: 'none' }}
             accept=".xlsx, .xls"
         />
-        <button onClick={() => fileInputRef.current?.click()} className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 text-sm font-medium">
+        <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-150 text-sm font-medium">
             <UploadIcon className="w-5 h-5 mr-2" />
             Importar em Massa
         </button>
         <button
+            type="button"
             onClick={() => openModal()}
             className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-150"
         >
@@ -250,54 +275,76 @@ const filteredCommonAreas = useMemo(() => {
         </button>
       </PageHeader>
       
-      <div className="mb-6">
+      <div className="mb-6 flex justify-end">
         <button
+            type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
+            className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}
         >
             <FilterIcon className="w-5 h-5 mr-2" />
-            {showFilters ? 'Ocultar Filtros Avançados' : 'Mostrar Filtros Avançados'}
+            {showFilters ? 'Ocultar Filtros' : 'Filtros e Pesquisa'}
         </button>
-        {showFilters && (
-            <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <label htmlFor="client" className="block text-sm font-medium text-gray-700">Cliente</label>
-                        <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
-                            <option value="">Todos</option>
-                            {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-gray-700">Local</label>
-                        <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
-                            <option value="">Todos</option>
-                            {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="subLocation" className="block text-sm font-medium text-gray-700">Sublocal</label>
-                        <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
-                            <option value="">Todos</option>
-                            {uniqueSubLocations.map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="environment" className="block text-sm font-medium text-gray-700">Ambiente</label>
-                        <select name="environment" id="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="mt-1 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 disabled:bg-gray-50">
-                            <option value="">Todos</option>
-                            {uniqueEnvironments.map(env => <option key={env} value={env}>{env}</option>)}
-                        </select>
-                    </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                    <button onClick={clearFilters} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Limpar Filtros</button>
-                </div>
-            </div>
-        )}
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      {showFilters && (
+          <div className="mb-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                  <div>
+                      <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-1">Pesquisa Global</label>
+                      <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <svg className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                              </svg>
+                          </div>
+                          <input
+                              type="text"
+                              id="search"
+                              name="search"
+                              value={filters.search}
+                              onChange={handleFilterChange}
+                              placeholder="Termo livre..."
+                              className="block w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                          />
+                      </div>
+                  </div>
+
+                  <div>
+                      <label htmlFor="client" className="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
+                      <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5">
+                          <option value="">Todos</option>
+                          {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-1">Local</label>
+                      <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                          <option value="">Todos</option>
+                          {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="subLocation" className="block text-sm font-semibold text-gray-700 mb-1">Sublocal</label>
+                      <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                          <option value="">Todos</option>
+                          {uniqueSubLocations.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                      </select>
+                  </div>
+                  <div>
+                      <label htmlFor="environment" className="block text-sm font-semibold text-gray-700 mb-1">Ambiente</label>
+                      <select name="environment" id="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                          <option value="">Todos</option>
+                          {uniqueEnvironments.map(env => <option key={env} value={env}>{env}</option>)}
+                      </select>
+                  </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                  <button type="button" onClick={clearFilters} className="text-sm font-semibold text-primary-600 hover:text-primary-700 underline px-4 py-2">Limpar todos os filtros</button>
+              </div>
+          </div>
+      )}
+
+      <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -311,7 +358,7 @@ const filteredCommonAreas = useMemo(() => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredCommonAreas.length > 0 ? filteredCommonAreas.map(area => (
-              <tr key={area.id}>
+              <tr key={area.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{area.client}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.location}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.subLocation}</td>
@@ -319,13 +366,13 @@ const filteredCommonAreas = useMemo(() => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.area}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end items-center space-x-1">
-                    <button onClick={() => openPreview(area)} className="p-2 rounded-full text-blue-600 hover:bg-blue-100 transition-colors" aria-label={`Visualizar ${area.client}`}>
+                    <button type="button" onClick={() => openPreview(area)} className="p-2 rounded-full text-blue-600 hover:bg-blue-100 transition-colors" aria-label={`Visualizar ${area.client}`}>
                       <EyeIcon className="w-5 h-5"/>
                     </button>
-                    <button onClick={() => openModal(area)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label={`Editar ${area.client}`}>
+                    <button type="button" onClick={() => openModal(area)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label={`Editar ${area.client}`}>
                       <EditIcon className="w-5 h-5"/>
                     </button>
-                    <button onClick={() => handleDelete(area.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors" aria-label={`Excluir ${area.client}`}>
+                    <button type="button" onClick={() => handleDelete(area.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors" aria-label={`Excluir ${area.client}`}>
                       <TrashIcon className="w-5 h-5"/>
                     </button>
                   </div>
@@ -333,8 +380,8 @@ const filteredCommonAreas = useMemo(() => {
               </tr>
             )) : (
                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-500">
-                        {commonAreas.length > 0 ? 'Nenhuma área comum encontrada com os filtros atuais.' : 'Nenhuma área comum cadastrada.'}
+                    <td colSpan={6} className="text-center py-10 text-gray-500 font-medium italic">
+                        {commonAreas.length > 0 ? 'Nenhuma área encontrada com os critérios de pesquisa.' : 'Nenhuma área comum cadastrada.'}
                     </td>
                 </tr>
             )}
@@ -349,7 +396,6 @@ const filteredCommonAreas = useMemo(() => {
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">{currentItem ? 'Editar Área Comum' : 'Nova Área Comum'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                {/* Row 1: Cliente | Local */}
                 <div>
                   <label htmlFor="client" className="block text-sm font-medium leading-6 text-gray-900">Cliente</label>
                   <div className="mt-2">
@@ -362,8 +408,6 @@ const filteredCommonAreas = useMemo(() => {
                     <input type="text" id="location" name="location" value={formState.location} onChange={handleInputChange} placeholder="Ex: Bloco A, Térreo" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required/>
                   </div>
                 </div>
-
-                {/* Row 2: Sublocal | Área */}
                 <div>
                   <label htmlFor="subLocation" className="block text-sm font-medium leading-6 text-gray-900">Sublocal</label>
                   <div className="mt-2">
@@ -376,13 +420,11 @@ const filteredCommonAreas = useMemo(() => {
                     <input type="number" id="area" name="area" value={formState.area} onChange={handleInputChange} placeholder="Ex: 50" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
                   </div>
                 </div>
-
-                {/* Row 3: Ambiente */}
                 <div className="md:col-span-2">
                     <label htmlFor="environment" className="block text-sm font-medium leading-6 text-gray-900">Ambiente</label>
                     <div className="mt-2 flex items-stretch space-x-2">
                         <input id="environment" type="text" name="environment" value={formState.environment} onChange={handleInputChange} placeholder="Ex: Lobby de Hotel, Cozinha" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
-                        <button type="button" onClick={handleGetSuggestions} disabled={!formState.environment || isLoadingSuggestions} className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                        <button type="button" onClick={handleGetSuggestions} disabled={!formState.environment || isLoadingSuggestions} className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors">
                             <SparklesIcon className="w-5 h-5 mr-2" />
                             {isLoadingSuggestions ? 'Sugerindo...' : 'Sugerir'}
                         </button>
@@ -406,8 +448,8 @@ const filteredCommonAreas = useMemo(() => {
               )}
 
               <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4">
-                <button type="button" onClick={closeModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancelar</button>
-                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Salvar</button>
+                <button type="button" onClick={closeModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors">Salvar</button>
               </div>
             </form>
           </div>
@@ -421,7 +463,7 @@ const filteredCommonAreas = useMemo(() => {
           <div className="bg-white rounded-lg p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start">
               <h3 id="preview-title" className="text-2xl font-bold mb-4 text-primary-700">{`${currentItem.client} - ${currentItem.environment}`}</h3>
-              <button onClick={closePreview} className="text-gray-500 hover:text-gray-800 text-3xl leading-none" aria-label="Fechar visualização">&times;</button>
+              <button onClick={closePreview} className="text-gray-500 hover:text-gray-800 text-3xl leading-none transition-colors" aria-label="Fechar visualização">&times;</button>
             </div>
             
             <div className="mb-6 border-b pb-4">
@@ -468,7 +510,7 @@ const filteredCommonAreas = useMemo(() => {
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={2} className="text-center py-6 text-gray-500">Nenhuma atividade planejada para esta área.</td>
+                                <td colSpan={2} className="text-center py-6 text-gray-500 italic">Nenhuma atividade planejada para esta área.</td>
                             </tr>
                         )}
                     </tbody>
@@ -477,7 +519,7 @@ const filteredCommonAreas = useMemo(() => {
 
 
             <div className="mt-6 flex justify-end">
-              <button onClick={closePreview} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Fechar</button>
+              <button type="button" onClick={closePreview} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">Fechar</button>
             </div>
           </div>
         </div>

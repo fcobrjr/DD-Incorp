@@ -1,20 +1,36 @@
+
 import React, { useState, useContext } from 'react';
 import { AppContext } from '../App';
 import PageHeader from '../components/PageHeader';
 import { Activity, CorrelatedResource } from '../types';
-import { EditIcon, TrashIcon, PlusIcon } from '../components/icons';
+import { EditIcon, TrashIcon, PlusIcon, ClockIcon } from '../components/icons';
+import InfoTooltip from '../components/InfoTooltip';
+import SearchableSelect from '../components/SearchableSelect';
 
 const Activities: React.FC = () => {
-  const { activities, setActivities, tools, materials } = useContext(AppContext)!;
+  const { 
+    activities, setActivities, 
+    tools, materials, 
+    workPlans, setWorkPlans,
+    scheduledActivities, setScheduledActivities 
+  } = useContext(AppContext)!;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
-  const [formState, setFormState] = useState<Omit<Activity, 'id'>>({ name: '', description: '', sla: 0, tools: [], materials: [] });
+  const [formState, setFormState] = useState<Omit<Activity, 'id'>>({ 
+    name: '', 
+    description: '', 
+    sla: 0, 
+    slaCoefficient: 0,
+    tools: [], 
+    materials: [] 
+  });
 
   const openModal = (activity: Activity | null = null) => {
     setCurrentActivity(activity);
     setFormState(activity 
         ? { ...activity, tools: activity.tools || [], materials: activity.materials || [] } 
-        : { name: '', description: '', sla: 0, tools: [], materials: [] }
+        : { name: '', description: '', sla: 0, slaCoefficient: 0, tools: [], materials: [] }
     );
     setIsModalOpen(true);
   };
@@ -29,15 +45,8 @@ const Activities: React.FC = () => {
     setFormState(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
   };
   
-  const addResource = (type: 'tools' | 'materials') => {
-      const selectElement = document.getElementById(`select-${type}`) as HTMLSelectElement;
-      if (!selectElement) return;
-
-      const resourceId = selectElement.value;
-      if (!resourceId || (formState[type] || []).some(r => r.resourceId === resourceId)) {
-        selectElement.value = "";
-        return;
-      };
+  const addResource = (type: 'tools' | 'materials', resourceId: string) => {
+      if (!resourceId || (formState[type] || []).some(r => r.resourceId === resourceId)) return;
       
       let quantity = 1;
       if (type === 'materials') {
@@ -49,7 +58,6 @@ const Activities: React.FC = () => {
 
       const newResource: CorrelatedResource = { resourceId, quantity };
       setFormState(prev => ({ ...prev, [type]: [...(prev[type] || []), newResource] }));
-      selectElement.value = "";
   };
 
   const updateResourceQuantity = (type: 'tools' | 'materials', resourceId: string, quantity: number) => {
@@ -71,29 +79,48 @@ const Activities: React.FC = () => {
     if (currentActivity) {
       setActivities(prev => prev.map(a => a.id === currentActivity.id ? { ...formState, id: currentActivity.id } : a));
     } else {
-      setActivities(prev => [...prev, { ...formState, id: Date.now().toString() }]);
+      setActivities(prev => [...prev, { ...formState, id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` }]);
     }
     closeModal();
   };
 
   const handleDelete = (id: string) => {
-    setActivities(prev => prev.filter(a => a.id !== id));
+    if (window.confirm("Deseja realmente excluir esta atividade? Ela será removida de todos os planejamentos e agendas pendentes.")) {
+        // 1. Remove from global catalog
+        setActivities(prev => prev.filter(a => a.id !== id));
+
+        // 2. Cascade: Remove from Work Plans
+        setWorkPlans(prevPlans => prevPlans.map(plan => ({
+            ...plan,
+            plannedActivities: (plan.plannedActivities || []).filter(pa => pa.activityId !== id)
+        })));
+
+        // 3. Cascade: Remove from Scheduled Activities (non-executed only)
+        setScheduledActivities(prevSched => prevSched.filter(sa => {
+            const plan = workPlans.find(p => p.id === sa.workPlanId);
+            const plannedAct = plan?.plannedActivities.find(pa => pa.id === sa.plannedActivityId);
+            // If the activity scheduled matches the deleted ID, and it's not finished, remove it.
+            return plannedAct?.activityId !== id || sa.executionDate !== null;
+        }));
+    }
   };
 
   const renderResourceList = (type: 'tools' | 'materials') => {
     const resourceList = type === 'tools' ? tools : materials;
     const title = type === 'tools' ? 'Equipamentos' : 'Materiais';
+    const resourceOptions = resourceList.map(r => ({ value: r.id, label: `${r.name} (${r.unit})` }));
+
     return (
         <div className="mt-6">
             <h4 className="text-lg font-medium leading-6 text-gray-900">{title}</h4>
             <div className="mt-4">
-              <label htmlFor={`select-${type}`} className="sr-only">Adicionar {title}</label>
               <div className="flex items-stretch space-x-2">
-                  <select id={`select-${type}`} className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6">
-                      <option value="">Selecione para adicionar...</option>
-                      {resourceList.map(item => <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>)}
-                  </select>
-                  <button type="button" onClick={() => addResource(type)} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 whitespace-nowrap">Adicionar</button>
+                  <SearchableSelect 
+                    options={resourceOptions}
+                    value=""
+                    onChange={(val) => addResource(type, val)}
+                    placeholder={`Adicionar ${title.toLowerCase()}...`}
+                  />
               </div>
             </div>
             <div className="mt-4 space-y-3 max-h-48 overflow-y-auto pr-2">
@@ -136,6 +163,7 @@ const Activities: React.FC = () => {
     <div className="p-8">
       <PageHeader title="Atividades">
         <button
+          type="button"
           onClick={() => openModal()}
           className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-150"
         >
@@ -143,14 +171,25 @@ const Activities: React.FC = () => {
           Nova Atividade
         </button>
       </PageHeader>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+
+      <div className="bg-white shadow-md rounded-lg border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SLA (min)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recursos</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                <div className="flex items-center">
+                  SLA Fixo
+                  <InfoTooltip side="bottom" text="Tempo base imutável para setup, deslocamento e organização da atividade." />
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative">
+                <div className="flex items-center">
+                  SLA por m²
+                  <InfoTooltip side="bottom" text="Tempo variável que será multiplicado pela área (m²) do ambiente selecionado." />
+                </div>
+              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
@@ -159,14 +198,12 @@ const Activities: React.FC = () => {
               <tr key={activity.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{activity.name}</td>
                 <td className="px-6 py-4 text-sm text-gray-500 max-w-sm truncate">{activity.description}</td>
-                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.sla}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {(activity.tools || []).length} Equip. / {(activity.materials || []).length} Mat.
-                </td>
+                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.sla} min</td>
+                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{activity.slaCoefficient ? `${activity.slaCoefficient} min/m²` : '—'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end items-center space-x-1">
-                    <button onClick={() => openModal(activity)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors"><EditIcon className="w-5 h-5"/></button>
-                    <button onClick={() => handleDelete(activity.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                    <button type="button" onClick={() => openModal(activity)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label="Editar"><EditIcon className="w-5 h-5"/></button>
+                    <button type="button" onClick={() => handleDelete(activity.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors" aria-label="Excluir"><TrashIcon className="w-5 h-5"/></button>
                   </div>
                 </td>
               </tr>
@@ -185,7 +222,7 @@ const Activities: React.FC = () => {
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">{currentActivity ? 'Editar Atividade' : 'Nova Atividade'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                    <div className="md:col-span-2">
                       <label htmlFor="name" className="block text-sm font-medium leading-6 text-gray-900">Nome da Atividade</label>
                       <div className="mt-2">
@@ -193,9 +230,21 @@ const Activities: React.FC = () => {
                       </div>
                     </div>
                     <div>
-                        <label htmlFor="sla" className="block text-sm font-medium leading-6 text-gray-900">SLA (minutos)</label>
+                        <label htmlFor="sla" className="block text-sm font-medium leading-6 text-gray-900">
+                          SLA Fixo (min)
+                          <InfoTooltip text="Tempo para preparação inicial." />
+                        </label>
                         <div className="mt-2">
-                           <input type="number" name="sla" id="sla" value={formState.sla} onChange={handleInputChange} placeholder="Ex: 60" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                           <input type="number" name="sla" id="sla" value={formState.sla} onChange={handleInputChange} placeholder="Tempo base" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                        </div>
+                    </div>
+                    <div>
+                        <label htmlFor="slaCoefficient" className="block text-sm font-medium leading-6 text-gray-900">
+                          SLA por m²
+                          <InfoTooltip text="Minutos por metro quadrado." />
+                        </label>
+                        <div className="mt-2">
+                           <input type="number" name="slaCoefficient" id="slaCoefficient" step="0.001" value={formState.slaCoefficient} onChange={handleInputChange} placeholder="Ex: 0.5" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
                 </div>
