@@ -74,31 +74,25 @@ const GovernanceParametersPage: React.FC = () => {
                 <section className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
                     <div className="border-b border-gray-200 pb-4 mb-4">
                         <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 text-sm">1</span>
-                            Tempos Médios de Limpeza (Padrão)
+                            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3 text-sm font-bold">1</span>
+                            Tempos Médios de Limpeza
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1 ml-11">Valores usados quando não especificado no cadastro do colaborador.</p>
+                        <p className="text-sm text-gray-500 mt-1 ml-11">Tempo padrão (em minutos) gasto por tipo de limpeza.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ml-11">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Vago Sujo (min)</label>
-                            <input 
-                                type="number" 
-                                name="defaultCleaningSpeedVacantDirty" 
-                                value={formState.defaultCleaningSpeedVacantDirty} 
-                                onChange={handleInputChange} 
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" 
-                            />
+                            <label className="block text-sm font-medium text-gray-700">Vago Sujo (Check-out)</label>
+                            <div className="mt-1 flex rounded-md shadow-sm">
+                                <input type="number" name="defaultCleaningSpeedVacantDirty" value={formState.defaultCleaningSpeedVacantDirty} onChange={handleInputChange} className="block w-full rounded-md border-gray-300 focus:ring-primary-600 sm:text-sm" />
+                                <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">min</span>
+                            </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Estada (min)</label>
-                            <input 
-                                type="number" 
-                                name="defaultCleaningSpeedStay" 
-                                value={formState.defaultCleaningSpeedStay} 
-                                onChange={handleInputChange} 
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" 
-                            />
+                            <label className="block text-sm font-medium text-gray-700">Estada (Stay-over)</label>
+                            <div className="mt-1 flex rounded-md shadow-sm">
+                                <input type="number" name="defaultCleaningSpeedStay" value={formState.defaultCleaningSpeedStay} onChange={handleInputChange} className="block w-full rounded-md border-gray-300 focus:ring-primary-600 sm:text-sm" />
+                                <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">min</span>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -107,8 +101,8 @@ const GovernanceParametersPage: React.FC = () => {
                 <section className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
                      <div className="border-b border-gray-200 pb-4 mb-4">
                         <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                            <span className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center mr-3 text-sm">2</span>
-                            Regras de Feriados
+                            <span className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center mr-3 text-sm font-bold">2</span>
+                            Regras de Feriados e Datas Especiais
                         </h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ml-11">
@@ -126,11 +120,11 @@ const GovernanceParametersPage: React.FC = () => {
                         </div>
                         <div className="flex items-center space-x-3">
                             <input type="checkbox" id="preferEffectiveOnHolidays" name="preferEffectiveOnHolidays" checked={formState.preferEffectiveOnHolidays} onChange={handleInputChange} className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600" />
-                            <label htmlFor="preferEffectiveOnHolidays" className="text-sm font-medium text-gray-700">Dar preferência a Efetivos</label>
+                            <label htmlFor="preferEffectiveOnHolidays" className="text-sm font-medium text-gray-700">Priorizar Efetivos</label>
                         </div>
                         <div className="md:col-span-2">
-                             <label className="block text-sm font-medium text-gray-700">Observações de Feriado (RH)</label>
-                             <textarea name="holidayNotes" value={formState.holidayNotes} onChange={handleInputChange} rows={2} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm"></textarea>
+                             <label className="block text-sm font-medium text-gray-700">Diretrizes de Escala (RH)</label>
+                             <textarea name="holidayNotes" value={formState.holidayNotes} onChange={handleInputChange} rows={2} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" placeholder="Observações específicas para feriados..."></textarea>
                         </div>
                     </div>
                 </section>
@@ -139,17 +133,17 @@ const GovernanceParametersPage: React.FC = () => {
                 <section className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
                     <div className="border-b border-gray-200 pb-4 mb-4">
                         <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                            <span className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-3 text-sm">3</span>
-                            Colaboradores Intermitentes
+                            <span className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-3 text-sm font-bold">3</span>
+                            Gestão de Colaboradores Intermitentes
                         </h3>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 ml-11">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Mínimo Horas/Semana</label>
+                            <label className="block text-sm font-medium text-gray-700">Mínimo Semanal (Horas)</label>
                             <input type="number" name="intermittentMinWeeklyHours" value={formState.intermittentMinWeeklyHours} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Máximo Horas/Semana</label>
+                            <label className="block text-sm font-medium text-gray-700">Máximo Semanal (Horas)</label>
                             <input type="number" name="intermittentMaxWeeklyHours" value={formState.intermittentMaxWeeklyHours} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
                         </div>
                         <div>
@@ -157,15 +151,93 @@ const GovernanceParametersPage: React.FC = () => {
                              <input type="number" name="intermittentMaxConsecutiveDays" value={formState.intermittentMaxConsecutiveDays} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
                         </div>
                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Intervalo entre Semanas (semanas)</label>
+                            <label className="block text-sm font-medium text-gray-700">Semanas de Intervalo</label>
                             <input type="number" name="intermittentWeeksInterval" value={formState.intermittentWeeksInterval} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Folga Obrigatória (a cada X semanas)</label>
-                            <input type="number" name="intermittentMandatoryOffWeeks" value={formState.intermittentMandatoryOffWeeks} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
+                            <label className="block text-sm font-medium text-gray-700">Folga Obrigatória (Semana)</label>
+                            <div className="mt-1 flex rounded-md shadow-sm">
+                                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">Cada</span>
+                                <input type="number" name="intermittentMandatoryOffWeeks" value={formState.intermittentMandatoryOffWeeks} onChange={handleInputChange} className="block w-full rounded-none border-gray-300 focus:ring-primary-600 sm:text-sm" />
+                                <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">sem.</span>
+                            </div>
                         </div>
                      </div>
                 </section>
+
+                {/* 4. Regras de Alternância */}
+                <section className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                    <div className="border-b border-gray-200 pb-4 mb-4">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                            <span className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-3 text-sm font-bold">4</span>
+                            Alternância e Qualidade de Vida
+                        </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 ml-11">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Repetição Máx de Turno (%)</label>
+                            <input type="number" name="maxShiftRepetitionPercentage" value={formState.maxShiftRepetitionPercentage} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Repetição Diurna Máx (%)</label>
+                            <input type="number" name="maxDayShiftRepetitionPercentage" value={formState.maxDayShiftRepetitionPercentage} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Modo de Alternância</label>
+                            <select name="alternationMode" value={formState.alternationMode} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm">
+                                <option value="Conservador">Conservador</option>
+                                <option value="Flexível">Flexível</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 5. Regime Operacional */}
+                <section className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                    <div className="border-b border-gray-200 pb-4 mb-4">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                            <span className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-3 text-sm font-bold">5</span>
+                            Regime Operacional e Capacidade
+                        </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 ml-11">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Total UHs (Quartos)</label>
+                            <input type="number" name="totalApartments" value={formState.totalApartments} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Duração Turno (Horas)</label>
+                            <input type="number" name="standardShiftDuration" value={formState.standardShiftDuration} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Meta Eficiência (%)</label>
+                            <input type="number" name="efficiencyTarget" value={formState.efficiencyTarget} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Rodízio Domingos</label>
+                            <div className="mt-1 flex rounded-md shadow-sm">
+                                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">1 a cada</span>
+                                <input type="number" name="sundayRotationRatio" value={formState.sundayRotationRatio} onChange={handleInputChange} className="block w-full rounded-none border-gray-300 focus:ring-primary-600 sm:text-sm" />
+                                <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-xs">sem.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 6. Regras Customizadas */}
+                <section className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+                    <div className="border-b border-gray-200 pb-4 mb-4">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                            <span className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center mr-3 text-sm font-bold">6</span>
+                            Instruções e Regras Customizadas
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1 ml-11">Espaço livre para detalhamento de regras de negócio específicas da unidade.</p>
+                    </div>
+                    <div className="ml-11">
+                        <textarea name="customRules" value={formState.customRules} onChange={handleInputChange} rows={4} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-600 sm:text-sm" placeholder="Ex: Regras de convivência, prioridades de escala por antiguidade, etc..."></textarea>
+                    </div>
+                </section>
+
             </div>
         </div>
     );

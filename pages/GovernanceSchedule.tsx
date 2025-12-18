@@ -90,6 +90,14 @@ const GovernanceSchedulePage: React.FC = () => {
         return teamMembers.filter(m => m.sector === 'Governança' && m.isActive).sort((a,b) => a.name.localeCompare(b.name));
     }, [teamMembers]);
 
+    const weekLabel = useMemo(() => {
+        const start = createSafeDate(selectedWeekStart);
+        const day = String(start.getDate()).padStart(2, '0');
+        const month = String(start.getMonth() + 1).padStart(2, '0');
+        const year = String(start.getFullYear()).slice(-2);
+        return `Semana de ${day}/${month}/${year}`;
+    }, [selectedWeekStart]);
+
     return (
         <div className="p-8 pb-20">
             <PageHeader title="Escala Semanal">
@@ -108,7 +116,7 @@ const GovernanceSchedulePage: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 flex items-center justify-between">
                     <div className="flex items-center bg-gray-100 rounded-lg border border-gray-200 overflow-hidden h-10">
                         <button onClick={() => changeWeek('prev')} className="px-3 hover:bg-gray-200 text-gray-500 border-r border-gray-200 transition-colors h-full">&lt;</button>
-                        <div className="px-6 text-sm font-bold text-gray-700">Semana de {selectedWeekStart}</div>
+                        <div className="px-6 text-sm font-bold text-gray-700 uppercase">{weekLabel}</div>
                         <button onClick={() => changeWeek('next')} className="px-3 hover:bg-gray-200 text-gray-500 border-l border-gray-200 transition-colors h-full">&gt;</button>
                     </div>
                 </div>
