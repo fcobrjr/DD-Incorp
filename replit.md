@@ -1,50 +1,27 @@
-# ToolTracker Pro
+# Common Area Planner
 
 ## Overview
-Sistema de gerenciamento de ferramentas baseado no padrão ToolTrackerPro2. Fullstack com Express + React + PostgreSQL + Drizzle ORM.
+A React + TypeScript application built with Vite for planning and managing common areas. Uses Tailwind CSS for styling and the Google Gemini API for AI features.
 
 ## Project Structure
-```
-/client          # Frontend React
-  /src
-    /components  # Componentes UI (ShadCN/UI)
-    /pages       # Páginas da aplicação
-    /hooks       # Custom hooks
-    /lib         # Utilitários (queryClient, utils)
-  index.html     # Entry point HTML
-/server          # Backend Express
-  index.ts       # Servidor principal
-  db.ts          # Conexão com banco de dados
-  vite.ts        # Configuração do Vite para desenvolvimento
-  routes.ts      # Rotas da API
-  storage.ts     # Layer de storage
-/shared          # Código compartilhado
-  schema.ts      # Schema Drizzle (PostgreSQL)
-/migrations      # Migrações do banco de dados
-/uploads         # Arquivos de upload
-/attached_assets # Assets anexados
-```
+- `/components` - Reusable React components
+- `/pages` - Page components for each route
+- `/hooks` - Custom React hooks
+- `/data` - Sample data and data utilities
+- `/services` - API service integrations (Gemini)
+- `App.tsx` - Main application component with routing
+- `types.ts` - TypeScript type definitions
 
 ## Development
-- **Start**: `npm run dev` - Inicia servidor Express + Vite HMR na porta 5000
-- **Build**: `npm run build` - Compila para produção
-- **Start Production**: `npm run start` - Inicia servidor de produção
-- **DB Push**: `npm run db:push` - Sincroniza schema com banco de dados
+- **Start**: `npm run dev` - Runs Vite dev server on port 5000
+- **Build**: `npm run build` - Creates production build in `dist/`
+- **Preview**: `npm run preview` - Preview production build
 
 ## Configuration
-- Express serve API e cliente na mesma porta (5000)
-- Vite configurado com HMR e allowedHosts para Replit
-- Drizzle ORM com PostgreSQL (Neon)
-- TanStack Query para data fetching
-- ShadCN/UI + Tailwind CSS para estilização
-- Wouter para rotas do cliente
-
-## Path Aliases
-- `@/` → `client/src/`
-- `@shared/` → `shared/`
-- `@assets/` → `attached_assets/`
+- Vite configured for port 5000 with all hosts allowed for Replit proxy
+- Uses `@` alias for root directory imports
+- Gemini API key accessed via `GEMINI_API_KEY` environment variable
 
 ## Deployment
-- Build: `npm run build`
-- Run: `npm run start`
-- Target: Autoscale
+- Static deployment with `dist` as public directory
+- Build command: `npm run build`
