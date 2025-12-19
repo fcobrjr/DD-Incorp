@@ -1,7 +1,7 @@
-
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon, MapIcon, SlidersIcon, BarChartIcon, LayoutGridIcon, MailIcon, ClipboardListIcon } from './icons';
+import { Link, useLocation } from 'wouter';
+import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon, MapIcon, SlidersIcon, BarChartIcon, LayoutGridIcon, MailIcon, ClipboardListIcon, LogOutIcon } from './icons';
+import { useAuth } from '../hooks/use-auth';
 
 const navigation = [
   { name: 'Áreas Comuns', href: '/', icon: HomeIcon },
@@ -25,6 +25,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
+  const [location] = useLocation();
+  const { logoutMutation, user } = useAuth();
+
   return (
     <aside className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className={`p-4 border-b border-gray-200 flex items-center h-20 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
@@ -39,25 +42,41 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </button>
       </div>
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {navigation.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.href}
-            end={item.href === '/'}
-            title={isCollapsed ? item.name : undefined}
-            className={({ isActive }) =>
-              `flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${isCollapsed ? 'justify-center' : ''} ${
+        {navigation.map((item) => {
+          const isActive = item.href === '/' ? location === '/' : location.startsWith(item.href);
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              title={isCollapsed ? item.name : undefined}
+              className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 ${isCollapsed ? 'justify-center' : ''} ${
                 isActive
                   ? 'bg-primary-50 text-primary-600'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`
-            }
-          >
-            <item.icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'}`} />
-            {!isCollapsed && item.name}
-          </NavLink>
-        ))}
+              }`}
+            >
+              <item.icon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'}`} />
+              {!isCollapsed && item.name}
+            </Link>
+          );
+        })}
       </nav>
+      <div className="p-4 border-t border-gray-200">
+        {!isCollapsed && user && (
+          <div className="mb-3 text-sm text-gray-600">
+            <span className="font-medium">{user.name}</span>
+          </div>
+        )}
+        <button
+          onClick={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
+          title={isCollapsed ? 'Sair' : undefined}
+          className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-150 w-full text-gray-600 hover:bg-red-50 hover:text-red-600 ${isCollapsed ? 'justify-center' : ''}`}
+        >
+          <LogOutIcon className={`w-5 h-5 ${isCollapsed ? '' : 'mr-3'}`} />
+          {!isCollapsed && 'Sair'}
+        </button>
+      </div>
     </aside>
   );
 };

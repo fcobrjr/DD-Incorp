@@ -1,81 +1,57 @@
-import React, { useState } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
-import { AppContext } from './context/AppContext';
-import Sidebar from './components/Sidebar';
-import CommonAreas from './pages/CommonAreas';
-import Activities from './pages/Activities';
-import Tools from './pages/Tools';
-import Materials from './pages/Materials';
-import Team from './pages/Team';
-import Planning from './pages/Planning';
-import Schedule from './pages/Schedule';
-import DailyWorkOrders from './pages/DailyWorkOrders';
-import GovernanceParameters from './pages/GovernanceParameters';
-import GovernancePlanning from './pages/GovernancePlanning';
-import GovernanceSchedule from './pages/GovernanceSchedule';
-import GovernanceConvocation from './pages/GovernanceConvocation';
-import ConvocationResponse from './pages/ConvocationResponse';
-import Blueprint from './pages/Blueprint';
-import useLocalStorage from './hooks/useLocalStorage';
-import { CommonArea, Activity, Resource, TeamMember, WorkPlan, ScheduledActivity, GovernanceParameters as GovernanceParametersType, GovernanceWeeklyPlan, GovernanceSchedule as GovernanceScheduleType, Convocation } from '@shared/types';
-import { 
-  DEFAULT_GOVERNANCE_PARAMETERS
-} from './data/sampleData';
+import { Switch, Route } from "wouter";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { AuthProvider } from "./hooks/use-auth";
+import { ProtectedRoute } from "./lib/protected-route";
+import AuthPage from "./pages/auth-page";
+import MainLayout from "./components/MainLayout";
 
-const App: React.FC = () => {
-  const [commonAreas, setCommonAreas] = useLocalStorage<CommonArea[]>('commonAreas', []);
-  const [activities, setActivities] = useLocalStorage<Activity[]>('activities', []);
-  const [tools, setTools] = useLocalStorage<Resource[]>('tools', []);
-  const [materials, setMaterials] = useLocalStorage<Resource[]>('materials', []);
-  const [teamMembers, setTeamMembers] = useLocalStorage<TeamMember[]>('teamMembers', []);
-  const [workPlans, setWorkPlans] = useLocalStorage<WorkPlan[]>('workPlans', []);
-  const [scheduledActivities, setScheduledActivities] = useLocalStorage<ScheduledActivity[]>('scheduledActivities', []);
-  const [governanceParameters, setGovernanceParameters] = useLocalStorage<GovernanceParametersType>('governanceParameters', DEFAULT_GOVERNANCE_PARAMETERS);
-  const [governanceWeeklyPlans, setGovernanceWeeklyPlans] = useLocalStorage<GovernanceWeeklyPlan[]>('governanceWeeklyPlans', []);
-  const [governanceSchedules, setGovernanceSchedules] = useLocalStorage<GovernanceScheduleType[]>('governanceSchedules', []);
-  const [governanceConvocations, setGovernanceConvocations] = useLocalStorage<Convocation[]>('governanceConvocations', []);
+import CommonAreas from "./pages/CommonAreas";
+import Activities from "./pages/Activities";
+import Tools from "./pages/Tools";
+import Materials from "./pages/Materials";
+import Team from "./pages/Team";
+import Planning from "./pages/Planning";
+import Schedule from "./pages/Schedule";
+import DailyWorkOrders from "./pages/DailyWorkOrders";
+import GovernanceParameters from "./pages/GovernanceParameters";
+import GovernancePlanning from "./pages/GovernancePlanning";
+import GovernanceSchedule from "./pages/GovernanceSchedule";
+import GovernanceConvocation from "./pages/GovernanceConvocation";
+import ConvocationResponse from "./pages/ConvocationResponse";
+import Blueprint from "./pages/Blueprint";
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
+function Router() {
   return (
-    <AppContext.Provider value={{
-      commonAreas, setCommonAreas,
-      activities, setActivities,
-      tools, setTools,
-      materials, setMaterials,
-      teamMembers, setTeamMembers,
-      workPlans, setWorkPlans,
-      scheduledActivities, setScheduledActivities,
-      governanceParameters, setGovernanceParameters,
-      governanceWeeklyPlans, setGovernanceWeeklyPlans,
-      governanceSchedules, setGovernanceSchedules,
-      governanceConvocations, setGovernanceConvocations
-    }}>
-      <HashRouter>
-        <div className="flex h-screen bg-gray-50 overflow-hidden">
-          <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
-          <main className="flex-1 overflow-y-auto">
-            <Routes>
-              <Route path="/" element={<CommonAreas />} />
-              <Route path="/activities" element={<Activities />} />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/materials" element={<Materials />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/planning" element={<Planning />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/daily-work-orders" element={<DailyWorkOrders />} />
-              <Route path="/governance-parameters" element={<GovernanceParameters />} />
-              <Route path="/governance-planning" element={<GovernancePlanning />} />
-              <Route path="/governance-schedule" element={<GovernanceSchedule />} />
-              <Route path="/governance-convocations" element={<GovernanceConvocation />} />
-              <Route path="/convocation-response/:id" element={<ConvocationResponse />} />
-              <Route path="/blueprint" element={<Blueprint />} />
-            </Routes>
-          </main>
-        </div>
-      </HashRouter>
-    </AppContext.Provider>
+    <Switch>
+      <ProtectedRoute path="/" component={() => <MainLayout><CommonAreas /></MainLayout>} />
+      <ProtectedRoute path="/activities" component={() => <MainLayout><Activities /></MainLayout>} />
+      <ProtectedRoute path="/tools" component={() => <MainLayout><Tools /></MainLayout>} />
+      <ProtectedRoute path="/materials" component={() => <MainLayout><Materials /></MainLayout>} />
+      <ProtectedRoute path="/team" component={() => <MainLayout><Team /></MainLayout>} />
+      <ProtectedRoute path="/planning" component={() => <MainLayout><Planning /></MainLayout>} />
+      <ProtectedRoute path="/schedule" component={() => <MainLayout><Schedule /></MainLayout>} />
+      <ProtectedRoute path="/daily-work-orders" component={() => <MainLayout><DailyWorkOrders /></MainLayout>} />
+      <ProtectedRoute path="/governance-parameters" component={() => <MainLayout><GovernanceParameters /></MainLayout>} />
+      <ProtectedRoute path="/governance-planning" component={() => <MainLayout><GovernancePlanning /></MainLayout>} />
+      <ProtectedRoute path="/governance-schedule" component={() => <MainLayout><GovernanceSchedule /></MainLayout>} />
+      <ProtectedRoute path="/governance-convocations" component={() => <MainLayout><GovernanceConvocation /></MainLayout>} />
+      <ProtectedRoute path="/convocation-response/:id" component={() => <MainLayout><ConvocationResponse /></MainLayout>} />
+      <ProtectedRoute path="/blueprint" component={() => <MainLayout><Blueprint /></MainLayout>} />
+      <Route path="/auth" component={AuthPage} />
+      <Route component={() => <div className="flex items-center justify-center h-screen">Pagina nao encontrada</div>} />
+    </Switch>
   );
-};
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

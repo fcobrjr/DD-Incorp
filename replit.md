@@ -1,31 +1,71 @@
 # Common Area Planner
 
 ## Overview
-A React + TypeScript application for planning and managing common areas, activities, teams, governance, and scheduling. Uses Express backend with Vite for development, Tailwind CSS for styling, Drizzle ORM for database, and Google Gemini API for AI features.
+A React + TypeScript application for planning and managing common areas, activities, teams, governance, and scheduling. Built as a sibling project to ToolTrackerPro2, sharing the same architecture patterns:
+
+- **Express backend** with Vite middleware integration
+- **PostgreSQL database** with Drizzle ORM
+- **Passport.js authentication** with session management
+- **TanStack Query** for data fetching
+- **wouter** for client-side routing
+- **Tailwind CSS** for styling
+- **Google Gemini API** for AI features
 
 ## Project Structure
 ```
-client/           # Frontend React application
+client/                    # Frontend React application
   src/
-    components/   # Reusable React components
-    context/      # React context (AppContext)
-    data/         # Sample data and utilities
-    hooks/        # Custom React hooks
-    pages/        # Page components for routes
-    services/     # API service integrations (Gemini)
-    App.tsx       # Main application with routing
-    main.tsx      # Entry point
+    components/            # Reusable React components
+      icons.tsx            # SVG icon components
+      MainLayout.tsx       # Main app layout with sidebar
+      PageHeader.tsx       # Page header component
+      Sidebar.tsx          # Navigation sidebar
+    context/               # React context definitions
+      AppContext.tsx       # App-wide context for data
+    data/                  # Sample data and utilities
+    hooks/                 # Custom React hooks
+      use-auth.tsx         # Authentication hook
+      useLocalStorage.ts   # Local storage hook
+    lib/                   # Utility functions
+      queryClient.ts       # TanStack Query client
+      protected-route.tsx  # Protected route component
+      utils.ts             # General utilities
+    pages/                 # Page components
+      auth-page.tsx        # Login/Register page
+      CommonAreas.tsx      # Common areas management
+      Activities.tsx       # Activities management
+      Team.tsx             # Team members management
+      ... (other pages)
+    services/              # API service integrations
+      geminiService.ts     # Gemini AI integration
+    App.tsx                # Main app with routing
+    main.tsx               # Entry point
+    index.css              # Global styles
+  index.html               # HTML template
 
-server/           # Backend Express server
-  index.ts        # Server entry point
-  routes.ts       # API routes
-  storage.ts      # Database storage layer
-  vite.ts         # Vite dev middleware integration
+server/                    # Backend Express server
+  index.ts                 # Server entry point
+  routes.ts                # API routes
+  storage.ts               # Database storage layer (interface + implementation)
+  auth.ts                  # Passport authentication setup
+  db.ts                    # Database connection (Drizzle + Neon)
+  vite.ts                  # Vite dev middleware
 
-shared/           # Shared between client and server
-  types.ts        # TypeScript type definitions
-  schema.ts       # Drizzle ORM database schema
+shared/                    # Shared between client and server
+  types.ts                 # TypeScript type definitions (legacy)
+  schema.ts                # Drizzle ORM database schema & types
 ```
+
+## Architecture Pattern (Sibling to ToolTrackerPro2)
+This project follows the exact same patterns as ToolTrackerPro2:
+
+1. **Server structure**: index.ts, routes.ts, storage.ts, auth.ts, db.ts, vite.ts
+2. **Client routing**: wouter with ProtectedRoute pattern
+3. **Authentication**: Passport.js with local strategy
+4. **Data fetching**: TanStack Query with queryClient
+5. **State management**: AppContext for legacy local state, migrating to API
+6. **Database**: Drizzle ORM with PostgreSQL (Neon-backed)
+7. **Session storage**: PostgreSQL-backed sessions (connect-pg-simple)
 
 ## Development
 - **Start**: `npm run dev` - Runs Express with Vite middleware on port 5000
@@ -33,12 +73,45 @@ shared/           # Shared between client and server
 - **Preview**: `npm run preview` - Preview production build
 - **DB Push**: `npm run db:push` - Push database schema changes
 
+## Default Login
+After first run, a default admin user is created:
+- **Username**: admin
+- **Password**: admin123
+- Please change this password after first login!
+
 ## Configuration
 - Express serves API and Vite dev server on single port (5000)
 - Vite configured for port 5000 with all hosts allowed for Replit proxy
 - Uses `@` alias for client imports, `@shared` for shared imports
-- Gemini API key accessed via `GEMINI_API_KEY` environment variable
-- PostgreSQL database via Drizzle ORM (Neon-backed)
+- Environment variables:
+  - `DATABASE_URL` - PostgreSQL connection string
+  - `SESSION_SECRET` - Session encryption key
+  - `GEMINI_API_KEY` - Google Gemini API key (optional)
+
+## API Endpoints
+All routes under `/api/`:
+
+### Authentication
+- `POST /api/register` - Register new user
+- `POST /api/login` - Login user
+- `POST /api/logout` - Logout user
+- `GET /api/user` - Get current user
+
+### Common Areas
+- `GET /api/common-areas` - List all
+- `GET /api/common-areas/:id` - Get by ID
+- `POST /api/common-areas` - Create
+- `PUT /api/common-areas/:id` - Update
+- `DELETE /api/common-areas/:id` - Delete
+
+### Resources (Tools/Materials)
+- `GET /api/resources?type=tool|material` - List by type
+- `POST /api/resources` - Create
+- `PUT /api/resources/:id` - Update
+- `DELETE /api/resources/:id` - Delete
+
+### Activities, Team Members, Work Plans, etc.
+Similar CRUD patterns for all entities.
 
 ## Deployment
 - Autoscale deployment with Express server
@@ -46,6 +119,9 @@ shared/           # Shared between client and server
 - Run command: `NODE_ENV=production node dist/index.js`
 
 ## Recent Changes
-- 2025-12-19: Restructured to client/server/shared architecture
-- 2025-12-19: Added Express backend with Vite integration
-- 2025-12-19: Moved React context to centralized AppContext file
+- 2025-12-19: Restructured to match ToolTrackerPro2 sibling architecture
+- 2025-12-19: Added authentication with Passport.js
+- 2025-12-19: Migrated to wouter routing with protected routes
+- 2025-12-19: Added TanStack Query for data fetching
+- 2025-12-19: Created full API routes for all entities
+- 2025-12-19: Added PostgreSQL database with Drizzle ORM schema
