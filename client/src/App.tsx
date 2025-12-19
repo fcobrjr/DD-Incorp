@@ -1,6 +1,6 @@
-
-import React, { createContext, useState } from 'react';
+import React, { useState } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
+import { AppContext } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import CommonAreas from './pages/CommonAreas';
 import Activities from './pages/Activities';
@@ -17,15 +17,12 @@ import GovernanceConvocation from './pages/GovernanceConvocation';
 import ConvocationResponse from './pages/ConvocationResponse';
 import Blueprint from './pages/Blueprint';
 import useLocalStorage from './hooks/useLocalStorage';
-import { AppContextType, CommonArea, Activity, Resource, TeamMember, WorkPlan, ScheduledActivity, GovernanceParameters as GovernanceParametersType, GovernanceWeeklyPlan, GovernanceSchedule as GovernanceScheduleType, Convocation } from './types';
+import { CommonArea, Activity, Resource, TeamMember, WorkPlan, ScheduledActivity, GovernanceParameters as GovernanceParametersType, GovernanceWeeklyPlan, GovernanceSchedule as GovernanceScheduleType, Convocation } from '@shared/types';
 import { 
   DEFAULT_GOVERNANCE_PARAMETERS
 } from './data/sampleData';
 
-export const AppContext = createContext<AppContextType | null>(null);
-
 const App: React.FC = () => {
-  // Inicializando com arrays vazios para permitir novos lançamentos do zero
   const [commonAreas, setCommonAreas] = useLocalStorage<CommonArea[]>('commonAreas', []);
   const [activities, setActivities] = useLocalStorage<Activity[]>('activities', []);
   const [tools, setTools] = useLocalStorage<Resource[]>('tools', []);

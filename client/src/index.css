@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']),
+select,
+textarea {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border-color: #d1d5db !important;
+  border-width: 1px !important;
+}
+
+input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+input:not([type='checkbox']):not([type='radio']):focus,
+select:focus,
+textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+  color: #1f2937 !important;
+}
+
+::placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1f2937 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+@media print {
+  body, html {
+    background-color: white;
+  }
+  aside, header, #header-actions, #view-switcher, .non-printable {
+    display: none !important;
+  }
+  main {
+    overflow: visible !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #printable-calendar, #printable-calendar * {
+    visibility: visible;
+  }
+  #printable-calendar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+  }
+  .calendar-event {
+    border: 1px solid #ccc;
+  }
+}

@@ -1,9 +1,9 @@
 
 import React, { useContext, useState, useMemo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
 import { MailIcon, ClockIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon } from '../components/icons';
-import { Convocation, ScheduleShift, ConvocationStatus } from '../types';
+import { Convocation, ScheduleShift, ConvocationStatus } from '@shared/types';
 import { Link } from 'react-router-dom';
 
 const GovernanceConvocation: React.FC = () => {

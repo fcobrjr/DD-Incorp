@@ -1,7 +1,7 @@
 
 import React, { useState, useContext, useMemo } from 'react';
-import { AppContext } from '../App';
-import { WorkPlan, PlannedActivity, Periodicity, Activity, CorrelatedResource } from '../types';
+import { AppContext } from '../context/AppContext';
+import { WorkPlan, PlannedActivity, Periodicity, Activity, CorrelatedResource } from '@shared/types';
 import { TrashIcon, EditIcon, PlusIcon, LayoutGridIcon, ListIcon, FilterIcon } from '../components/icons';
 import PageHeader from '../components/PageHeader';
 import InfoTooltip from '../components/InfoTooltip';

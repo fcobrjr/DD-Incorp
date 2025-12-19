@@ -1,8 +1,8 @@
 
 import React, { useContext, useState, useEffect } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
-import { GovernanceParameters } from '../types';
+import { GovernanceParameters } from '@shared/types';
 import { DEFAULT_GOVERNANCE_PARAMETERS } from '../data/sampleData';
 import { SlidersIcon } from '../components/icons';
 

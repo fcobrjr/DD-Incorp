@@ -1,6 +1,6 @@
 
 import React, { useState, useContext, useMemo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
 import { PrinterIcon, ClipboardListIcon } from '../components/icons';
 import SearchableSelect from '../components/SearchableSelect';

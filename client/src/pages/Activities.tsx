@@ -1,8 +1,8 @@
 
 import React, { useState, useContext } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
-import { Activity, CorrelatedResource } from '../types';
+import { Activity, CorrelatedResource } from '@shared/types';
 import { EditIcon, TrashIcon, PlusIcon, ClockIcon } from '../components/icons';
 import InfoTooltip from '../components/InfoTooltip';
 import SearchableSelect from '../components/SearchableSelect';

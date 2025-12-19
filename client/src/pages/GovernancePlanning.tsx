@@ -1,8 +1,8 @@
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
-import { DailyOperationalData, DailyDemand, GovernanceWeeklyPlan, DayType } from '../types';
+import { DailyOperationalData, DailyDemand, GovernanceWeeklyPlan, DayType } from '@shared/types';
 import { BarChartIcon, ClockIcon, HomeIcon, AlertTriangleIcon, CalendarIcon } from '../components/icons';
 
 const DAYS_OF_WEEK = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];

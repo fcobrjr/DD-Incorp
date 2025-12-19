@@ -1,7 +1,7 @@
 
 import React, { useContext, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import { CheckCircleIcon, XCircleIcon, ClockIcon, AlertTriangleIcon } from '../components/icons';
 
 const ConvocationResponse: React.FC = () => {

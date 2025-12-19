@@ -1,8 +1,8 @@
 
 import React, { useState, useContext, useMemo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
-import { TeamMember, Sector, ContractType, WorkSchedule } from '../types';
+import { TeamMember, Sector, ContractType, WorkSchedule } from '@shared/types';
 import { EditIcon, TrashIcon, PlusIcon, FilterIcon } from '../components/icons';
 
 const SECTORS: Sector[] = ['Governança', 'A&B', 'Recepção', 'Manutenção', 'Áreas Comuns', 'Outros'];

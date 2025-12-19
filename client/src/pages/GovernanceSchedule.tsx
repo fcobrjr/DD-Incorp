@@ -1,9 +1,9 @@
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
 import { CalendarIcon, LayoutGridIcon, SparklesIcon, CheckCircleIcon, XCircleIcon, ClockIcon, AlertTriangleIcon } from '../components/icons';
-import { ScheduleShift, GovernanceSchedule } from '../types';
+import { ScheduleShift, GovernanceSchedule } from '@shared/types';
 
 const DAYS_OF_WEEK = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
 

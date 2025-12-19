@@ -1,8 +1,8 @@
 
 import React, { useState, useContext } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
-import { Resource } from '../types';
+import { Resource } from '@shared/types';
 import { EditIcon, TrashIcon, PlusIcon } from '../components/icons';
 
 const Materials: React.FC = () => {

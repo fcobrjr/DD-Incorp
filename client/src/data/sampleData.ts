@@ -1,5 +1,5 @@
 
-import { Resource, TeamMember, CommonArea, Activity, WorkPlan, ScheduledActivity, GovernanceParameters, GovernanceWeeklyPlan, Convocation } from '../types';
+import { Resource, TeamMember, CommonArea, Activity, WorkPlan, ScheduledActivity, GovernanceParameters, GovernanceWeeklyPlan, Convocation } from '@shared/types';
 
 // --- BASE RESOURCES ---
 export const SAMPLE_TOOLS: Resource[] = [

@@ -1,8 +1,8 @@
 
 import React, { useState, useContext, useMemo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
-import { ScheduledActivity, Periodicity, Resource, PlannedActivity } from '../types';
+import { ScheduledActivity, Periodicity, Resource, PlannedActivity } from '@shared/types';
 import { CalendarIcon, ListIcon, EyeIcon, FilterIcon, ClockIcon, CheckCircleIcon, AlertTriangleIcon, TrashIcon } from '../components/icons';
 import useLocalStorage from '../hooks/useLocalStorage';
 import SearchableSelect from '../components/SearchableSelect';

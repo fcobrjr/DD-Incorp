@@ -1,8 +1,8 @@
 
 import React, { useState, useContext, useRef, useMemo } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
-import { CommonArea, Activity } from '../types';
+import { CommonArea, Activity } from '@shared/types';
 import { EditIcon, TrashIcon, SparklesIcon, EyeIcon, DownloadIcon, UploadIcon, PlusIcon, FilterIcon } from '../components/icons';
 import { suggestActivitiesForEnvironment } from '../services/geminiService';
 
