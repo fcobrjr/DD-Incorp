@@ -1,13 +1,11 @@
-
 import React, { useState, useContext, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import { WorkPlan, PlannedActivity, Periodicity, Activity, CorrelatedResource } from '@shared/types';
 import { TrashIcon, EditIcon, PlusIcon, LayoutGridIcon, ListIcon, FilterIcon } from '../components/icons';
 import PageHeader from '../components/PageHeader';
 import InfoTooltip from '../components/InfoTooltip';
-import SearchableSelect from '../components/SearchableSelect';
 
-const PERIODICITY_OPTIONS: string[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual'];
+const PERIODICITY_OPTIONS: Periodicity[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal'];
 
 const PERIODICITY_COLOR_CONFIG: { [key: string]: { text: string; bg: string; } } = {
     'Diário': { text: 'text-blue-800', bg: 'bg-blue-100' },
@@ -24,6 +22,25 @@ const getPeriodicityStyle = (p: string) => {
     return PERIODICITY_COLOR_CONFIG[p] || { text: 'text-purple-800', bg: 'bg-purple-100' };
 };
 
+interface PlanActivityForm {
+    id: string;
+    activityId: string;
+    activityName: string;
+    slaCoefficient: number;
+    tools: CorrelatedResource[];
+    materials: CorrelatedResource[];
+    isModified: boolean;
+    newActivityName?: string;
+}
+
+interface WorkPlanForm {
+    id: string;
+    commonAreaId: string;
+    planName: string;
+    periodicity: Periodicity;
+    activities: PlanActivityForm[];
+}
+
 const Planning: React.FC = () => {
     const {
         commonAreas,
@@ -37,18 +54,11 @@ const Planning: React.FC = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentPlan, setCurrentPlan] = useState<WorkPlan | null>(null);
-    const [formState, setFormState] = useState<WorkPlan | null>(null);
-    const [selectedActivityForAdd, setSelectedActivityForAdd] = useState('');
-    const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
-    const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
-    const [activityFormState, setActivityFormState] = useState<Omit<Activity, 'id'>>({ 
-      name: '', 
-      description: '', 
-      sla: 0, 
-      slaCoefficient: 0,
-      tools: [], 
-      materials: [] 
-    });
+    const [formState, setFormState] = useState<WorkPlanForm | null>(null);
+    const [locationSearch, setLocationSearch] = useState('');
+    const [activitySearch, setActivitySearch] = useState('');
+    const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+    const [showActivityDropdown, setShowActivityDropdown] = useState(false);
 
     const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
     const [showFilters, setShowFilters] = useState(false);
@@ -85,16 +95,87 @@ const Planning: React.FC = () => {
         setFilters({ search: '', client: '', location: '', subLocation: '', environment: '', activityId: '' });
     };
 
-    const uniqueClients = useMemo(() => [...new Set(commonAreas.map(a => a.client).filter(Boolean))].sort(), [commonAreas]);
+    const uniqueClients = useMemo(() => Array.from(new Set(commonAreas.map(a => a.client).filter(Boolean))).sort(), [commonAreas]);
+
+    const filteredLocations = useMemo(() => {
+        if (!locationSearch.trim()) return commonAreas;
+        const term = locationSearch.toLowerCase();
+        return commonAreas.filter(a => 
+            a.client.toLowerCase().includes(term) ||
+            a.location.toLowerCase().includes(term) ||
+            a.subLocation.toLowerCase().includes(term) ||
+            a.environment.toLowerCase().includes(term)
+        );
+    }, [commonAreas, locationSearch]);
+
+    const filteredActivities = useMemo(() => {
+        if (!activitySearch.trim()) return activities;
+        const term = activitySearch.toLowerCase();
+        return activities.filter(a => 
+            a.name.toLowerCase().includes(term) ||
+            a.description.toLowerCase().includes(term)
+        );
+    }, [activities, activitySearch]);
+
+    const selectedArea = useMemo(() => {
+        if (!formState?.commonAreaId) return null;
+        return commonAreas.find(a => a.id === formState.commonAreaId);
+    }, [formState?.commonAreaId, commonAreas]);
+
+    const planSummary = useMemo(() => {
+        if (!formState || !selectedArea) return { area: 0, totalActivities: 0, totalMinutes: 0 };
+        const totalMinutes = formState.activities.reduce((sum, act) => {
+            return sum + (act.slaCoefficient * selectedArea.area);
+        }, 0);
+        return {
+            area: selectedArea.area,
+            totalActivities: formState.activities.length,
+            totalMinutes
+        };
+    }, [formState, selectedArea]);
+
+    const formatTime = (minutes: number) => {
+        const h = Math.floor(minutes / 60);
+        const m = Math.round(minutes % 60);
+        if (h === 0) return `${m}min`;
+        return `${h}h ${m}min`;
+    };
 
     const openModal = (plan: WorkPlan | null = null) => {
         setCurrentPlan(plan);
-        setFormState(plan ? { ...JSON.parse(JSON.stringify(plan)), plannedActivities: plan.plannedActivities || [] } : {
-            id: `plan-${Date.now()}`,
-            commonAreaId: '',
-            plannedActivities: [],
-        });
-        setSelectedActivityForAdd('');
+        if (plan) {
+            const area = commonAreas.find(a => a.id === plan.commonAreaId);
+            const planActivities: PlanActivityForm[] = (plan.plannedActivities || []).map(pa => {
+                const act = activities.find(a => a.id === pa.activityId);
+                return {
+                    id: pa.id,
+                    activityId: pa.activityId,
+                    activityName: act?.name || '',
+                    slaCoefficient: act?.slaCoefficient || 0,
+                    tools: act?.tools || [],
+                    materials: act?.materials || [],
+                    isModified: false
+                };
+            });
+            setFormState({
+                id: plan.id,
+                commonAreaId: plan.commonAreaId,
+                planName: `Plano - ${area?.environment || ''}`,
+                periodicity: plan.plannedActivities[0]?.periodicity || 'Diário',
+                activities: planActivities
+            });
+            setLocationSearch(area ? `${area.client} > ${area.location} > ${area.subLocation} > ${area.environment}` : '');
+        } else {
+            setFormState({
+                id: `plan-${Date.now()}`,
+                commonAreaId: '',
+                planName: '',
+                periodicity: 'Diário',
+                activities: []
+            });
+            setLocationSearch('');
+        }
+        setActivitySearch('');
         setIsModalOpen(true);
     };
 
@@ -102,44 +183,119 @@ const Planning: React.FC = () => {
         setIsModalOpen(false);
         setCurrentPlan(null);
         setFormState(null);
+        setLocationSearch('');
+        setActivitySearch('');
     };
 
-    const handleAreaChange = (val: string) => {
-        if (!currentPlan) {
-            const existingPlan = workPlans.find(p => p.commonAreaId === val);
-            if (existingPlan) {
-                alert("Já existe um plano para esta Área Comum. Editando o plano existente.");
-                setCurrentPlan(existingPlan);
-                setFormState({ ...JSON.parse(JSON.stringify(existingPlan)), plannedActivities: existingPlan.plannedActivities || [] });
-                return;
-            }
-        }
-        setFormState(prev => prev ? { ...prev, commonAreaId: val } : null);
-    };
-    
-    const addActivityToPlan = (activityId: string) => {
-        if (!formState || !activityId || (formState.plannedActivities || []).some(p => p.activityId === activityId)) {
-            setSelectedActivityForAdd('');
+    const handleLocationSelect = (areaId: string) => {
+        const area = commonAreas.find(a => a.id === areaId);
+        if (!area) return;
+
+        const existingPlan = workPlans.find(p => p.commonAreaId === areaId);
+        if (existingPlan && !currentPlan) {
+            alert("Já existe um plano para esta Área Comum. Editando o plano existente.");
+            openModal(existingPlan);
             return;
         }
-        const newPlannedActivity: PlannedActivity = {
-            id: `pa-${Date.now()}-${activityId}`,
-            activityId,
-            periodicity: 'Diário',
-        };
-        setFormState(prev => prev ? { ...prev, plannedActivities: [...(prev.plannedActivities || []), newPlannedActivity] } : null);
-        setSelectedActivityForAdd(''); 
+
+        setFormState(prev => prev ? { 
+            ...prev, 
+            commonAreaId: areaId,
+            planName: prev.planName || `Plano - ${area.environment}`
+        } : null);
+        setLocationSearch(`${area.client} > ${area.location} > ${area.subLocation} > ${area.environment}`);
+        setShowLocationDropdown(false);
     };
 
-    const removeActivityFromPlan = (plannedActivityId: string) => {
-        setFormState(prev => prev ? { ...prev, plannedActivities: (prev.plannedActivities || []).filter(p => p.id !== plannedActivityId) } : null);
-    };
-    
-    const updateActivityPeriodicity = (plannedActivityId: string, periodicity: Periodicity) => {
+    const handleActivitySelect = (activityId: string) => {
+        if (!formState) return;
+        
+        const activity = activities.find(a => a.id === activityId);
+        if (!activity) return;
+
+        if (formState.activities.some(a => a.activityId === activityId)) {
+            setActivitySearch('');
+            setShowActivityDropdown(false);
+            return;
+        }
+
+        const newActivity: PlanActivityForm = {
+            id: `pa-${Date.now()}-${activityId}`,
+            activityId,
+            activityName: activity.name,
+            slaCoefficient: activity.slaCoefficient || 0,
+            tools: activity.tools || [],
+            materials: activity.materials || [],
+            isModified: false
+        };
+
         setFormState(prev => prev ? {
             ...prev,
-            plannedActivities: (prev.plannedActivities || []).map(p => 
-                p.id === plannedActivityId ? { ...p, periodicity } : p
+            activities: [...prev.activities, newActivity]
+        } : null);
+        setActivitySearch('');
+        setShowActivityDropdown(false);
+    };
+
+    const removeActivityFromPlan = (activityFormId: string) => {
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.filter(a => a.id !== activityFormId)
+        } : null);
+    };
+
+    const updateActivitySla = (activityFormId: string, slaCoefficient: number) => {
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.map(a => 
+                a.id === activityFormId 
+                    ? { ...a, slaCoefficient, isModified: true }
+                    : a
+            )
+        } : null);
+    };
+
+    const toggleActivityTool = (activityFormId: string, toolId: string) => {
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.map(a => {
+                if (a.id !== activityFormId) return a;
+                const exists = a.tools.some(t => t.resourceId === toolId);
+                return {
+                    ...a,
+                    tools: exists 
+                        ? a.tools.filter(t => t.resourceId !== toolId)
+                        : [...a.tools, { resourceId: toolId, quantity: 1 }],
+                    isModified: true
+                };
+            })
+        } : null);
+    };
+
+    const toggleActivityMaterial = (activityFormId: string, materialId: string) => {
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.map(a => {
+                if (a.id !== activityFormId) return a;
+                const exists = a.materials.some(m => m.resourceId === materialId);
+                return {
+                    ...a,
+                    materials: exists 
+                        ? a.materials.filter(m => m.resourceId !== materialId)
+                        : [...a.materials, { resourceId: materialId, quantity: 1 }],
+                    isModified: true
+                };
+            })
+        } : null);
+    };
+
+    const updateNewActivityName = (activityFormId: string, name: string) => {
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.map(a => 
+                a.id === activityFormId 
+                    ? { ...a, newActivityName: name }
+                    : a
             )
         } : null);
     };
@@ -150,20 +306,64 @@ const Planning: React.FC = () => {
             alert("Por favor, selecione uma Área Comum.");
             return;
         }
+        if (!formState.planName.trim()) {
+            alert("Por favor, informe o nome do plano.");
+            return;
+        }
+        if (formState.activities.length === 0) {
+            alert("Por favor, adicione pelo menos uma atividade.");
+            return;
+        }
+
+        for (const act of formState.activities) {
+            if (act.isModified && !act.newActivityName?.trim()) {
+                alert(`A atividade "${act.activityName}" foi modificada. Por favor, informe um novo nome.`);
+                return;
+            }
+        }
+
+        formState.activities.forEach(act => {
+            if (act.isModified && act.newActivityName) {
+                const newActivity: Activity = {
+                    id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                    name: act.newActivityName,
+                    description: `Derivada de: ${act.activityName}`,
+                    sla: 0,
+                    slaCoefficient: act.slaCoefficient,
+                    tools: act.tools,
+                    materials: act.materials
+                };
+                setActivities(prev => [...prev, newActivity]);
+                act.activityId = newActivity.id;
+            }
+        });
+
+        const plannedActivities: PlannedActivity[] = formState.activities.map(act => ({
+            id: act.id,
+            activityId: act.activityId,
+            periodicity: formState.periodicity
+        }));
+
+        const workPlan: WorkPlan = {
+            id: formState.id,
+            commonAreaId: formState.commonAreaId,
+            plannedActivities
+        };
+
         if (currentPlan) {
-            setWorkPlans(prev => prev.map(p => p.id === currentPlan.id ? formState : p));
+            setWorkPlans(prev => prev.map(p => p.id === currentPlan.id ? workPlan : p));
         } else {
-             if (workPlans.some(p => p.commonAreaId === formState.commonAreaId)) {
+            if (workPlans.some(p => p.commonAreaId === formState.commonAreaId)) {
                 alert("Já existe um plano para esta Área Comum. Por favor, edite o plano existente.");
                 return;
             }
-            setWorkPlans(prev => [...prev, formState]);
+            setWorkPlans(prev => [...prev, workPlan]);
         }
         closeModal();
     };
-    
+
     const handleDelete = (planId: string) => {
-        if (window.confirm("Tem certeza que deseja excluir este plano de trabalho? Todas as tarefas agendadas futuras também serão removidas.")) {
+        if (window.confirm("Tem certeza que deseja excluir este plano de trabalho?")) {
             setWorkPlans(prev => prev.filter(p => p.id !== planId));
         }
     };
@@ -181,7 +381,7 @@ const Planning: React.FC = () => {
             if (filters.activityId && !(plan.plannedActivities || []).some(pa => pa.activityId === filters.activityId)) return false;
             return true;
         });
-    }, [workPlans, filters, commonAreas, activities]);
+    }, [workPlans, filters, commonAreas]);
 
     const flattenedActivities = useMemo(() => {
         return filteredWorkPlans.flatMap(plan =>
@@ -198,14 +398,14 @@ const Planning: React.FC = () => {
         <div className="p-8">
             <PageHeader title="Planejamento">
                 <div className="flex items-center space-x-2">
-                     <div className="bg-gray-100 p-1 rounded-lg flex items-center border border-gray-200">
+                    <div className="bg-gray-100 p-1 rounded-lg flex items-center border border-gray-200">
                         <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${viewMode === 'card' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}><LayoutGridIcon className="w-5 h-5"/></button>
                         <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${viewMode === 'table' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}><ListIcon className="w-5 h-5" /></button>
                     </div>
                     <button onClick={() => openModal()} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none transition-colors duration-150 font-semibold shadow-sm"><PlusIcon className="w-5 h-5 mr-2" />Novo Plano</button>
                 </div>
             </PageHeader>
-            
+
             <div className="mb-6 flex justify-end">
                 <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}><FilterIcon className="w-5 h-5 mr-2" />{showFilters ? 'Ocultar Filtros' : 'Filtros e Pesquisa'}</button>
             </div>
@@ -231,7 +431,7 @@ const Planning: React.FC = () => {
                 </div>
             )}
 
-           <div className={viewMode === 'card' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4" : ""}>
+            <div className={viewMode === 'card' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4" : ""}>
                 {viewMode === 'card' ? (
                     filteredWorkPlans.length > 0 ? filteredWorkPlans.map((plan) => {
                         const area = commonAreas.find(a => a.id === plan.commonAreaId);
@@ -255,7 +455,7 @@ const Planning: React.FC = () => {
                                     ))}
                                 </div>
                                 <div className="px-4 py-2 border-t border-gray-100 bg-white flex justify-between text-[10px] font-bold text-gray-400">
-                                    <span>{plan.plannedActivities.length} Atividades</span>
+                                    <span>{plan.plannedActivities?.length || 0} Atividades</span>
                                     <span>{area.area}m²</span>
                                 </div>
                             </div>
@@ -301,20 +501,261 @@ const Planning: React.FC = () => {
 
             {isModalOpen && formState && (
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-2xl font-semibold text-gray-900 mb-6">{currentPlan ? 'Editar Plano de Trabalho' : 'Novo Plano de Trabalho'}</h3>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium leading-6 text-gray-900">Área Comum</label>
-                                <div className="mt-2">
-                                    <SearchableSelect options={commonAreas.map(a => ({ value: a.id, label: `${a.client} | ${a.environment}` }))} value={formState.commonAreaId} onChange={handleAreaChange} disabled={!!currentPlan} placeholder="Selecione a área..."/>
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white">
+                            <h3 className="text-xl font-semibold text-gray-900">
+                                {currentPlan ? 'Editar Plano de Trabalho' : 'Novo Plano de Trabalho'}
+                            </h3>
+                            <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Identificação do Local</h4>
+                                    <div className="relative">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Local / Área Comum *</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                            </span>
+                                            <input
+                                                type="text"
+                                                value={locationSearch}
+                                                onChange={(e) => {
+                                                    setLocationSearch(e.target.value);
+                                                    setShowLocationDropdown(true);
+                                                    if (!e.target.value) {
+                                                        setFormState(prev => prev ? { ...prev, commonAreaId: '' } : null);
+                                                    }
+                                                }}
+                                                onFocus={() => setShowLocationDropdown(true)}
+                                                placeholder="Buscar por cliente, local, sublocal ou ambiente..."
+                                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                disabled={!!currentPlan}
+                                            />
+                                        </div>
+                                        {showLocationDropdown && !currentPlan && filteredLocations.length > 0 && (
+                                            <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-48 overflow-y-auto">
+                                                {filteredLocations.map(area => (
+                                                    <button
+                                                        key={area.id}
+                                                        type="button"
+                                                        onClick={() => handleLocationSelect(area.id)}
+                                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-primary-50 transition-colors ${formState.commonAreaId === area.id ? 'bg-primary-100 text-primary-700' : 'text-gray-700'}`}
+                                                    >
+                                                        <span className="font-medium">{area.client}</span>
+                                                        <span className="text-gray-400"> &gt; </span>
+                                                        <span>{area.location}</span>
+                                                        <span className="text-gray-400"> &gt; </span>
+                                                        <span>{area.subLocation}</span>
+                                                        <span className="text-gray-400"> &gt; </span>
+                                                        <span className="text-primary-600">{area.environment}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-x-4">
-                                <button type="button" onClick={closeModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancelar</button>
-                                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700">Salvar Plano</button>
-                            </div>
-                        </form>
+
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Dados do Plano</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Plano *</label>
+                                            <input
+                                                type="text"
+                                                value={formState.planName}
+                                                onChange={(e) => setFormState(prev => prev ? { ...prev, planName: e.target.value } : null)}
+                                                placeholder="Ex: Limpeza semanal - Cobertura"
+                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Periodicidade *</label>
+                                            <select
+                                                value={formState.periodicity}
+                                                onChange={(e) => setFormState(prev => prev ? { ...prev, periodicity: e.target.value as Periodicity } : null)}
+                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                            >
+                                                {PERIODICITY_OPTIONS.map(p => (
+                                                    <option key={p} value={p}>{p}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Atividades do Plano</h4>
+                                    <div className="relative mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Adicionar Atividade *</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                            </span>
+                                            <input
+                                                type="text"
+                                                value={activitySearch}
+                                                onChange={(e) => {
+                                                    setActivitySearch(e.target.value);
+                                                    setShowActivityDropdown(true);
+                                                }}
+                                                onFocus={() => setShowActivityDropdown(true)}
+                                                placeholder="Pesquisar atividade existente..."
+                                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                            />
+                                        </div>
+                                        {showActivityDropdown && filteredActivities.length > 0 && (
+                                            <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-48 overflow-y-auto">
+                                                {filteredActivities.map(act => (
+                                                    <button
+                                                        key={act.id}
+                                                        type="button"
+                                                        onClick={() => handleActivitySelect(act.id)}
+                                                        className="w-full text-left px-4 py-2 text-sm hover:bg-primary-50 transition-colors text-gray-700"
+                                                    >
+                                                        <span className="font-medium">{act.name}</span>
+                                                        {act.description && <span className="text-gray-400 ml-2">- {act.description}</span>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {formState.activities.map(act => (
+                                            <div key={act.id} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <h5 className="font-semibold text-gray-900">Atividade: {act.activityName}</h5>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeActivityFromPlan(act.id)}
+                                                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                                    >
+                                                        Remover atividade
+                                                    </button>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                                                            SLA base (coeficiente por m²)
+                                                            <InfoTooltip text="O SLA informado é um coeficiente por metro quadrado. O cálculo final ocorre automaticamente no planejamento." />
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            step="0.1"
+                                                            min="0"
+                                                            value={act.slaCoefficient}
+                                                            onChange={(e) => updateActivitySla(act.id, parseFloat(e.target.value) || 0)}
+                                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                        />
+                                                    </div>
+                                                    {selectedArea && (
+                                                        <div className="flex flex-col justify-end">
+                                                            <p className="text-sm text-gray-600">Área do local: <span className="font-medium">{selectedArea.area} m²</span></p>
+                                                            <p className="text-sm text-primary-600 font-medium">SLA calculado: {formatTime(act.slaCoefficient * selectedArea.area)}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-700">Equipamentos</label>
+                                                        <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                                                            {tools.map(tool => (
+                                                                <label key={tool.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={act.tools.some(t => t.resourceId === tool.id)}
+                                                                        onChange={() => toggleActivityTool(act.id, tool.id)}
+                                                                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                                                    />
+                                                                    {tool.name}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium text-gray-700">Materiais</label>
+                                                        <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                                                            {materials.map(mat => (
+                                                                <label key={mat.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={act.materials.some(m => m.resourceId === mat.id)}
+                                                                        onChange={() => toggleActivityMaterial(act.id, mat.id)}
+                                                                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                                                    />
+                                                                    {mat.name}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {act.isModified && (
+                                                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                                                        <p className="text-sm text-amber-800 font-medium mb-2">
+                                                            Esta atividade será salva como uma nova atividade. Informe um novo nome:
+                                                        </p>
+                                                        <input
+                                                            type="text"
+                                                            value={act.newActivityName || ''}
+                                                            onChange={(e) => updateNewActivityName(act.id, e.target.value)}
+                                                            placeholder="Nome da nova atividade..."
+                                                            className="block w-full px-3 py-2 border border-amber-300 rounded-md bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {formState.activities.length > 0 && selectedArea && (
+                                    <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
+                                        <h4 className="text-sm font-semibold text-primary-800 mb-2">Resumo do Plano</h4>
+                                        <div className="grid grid-cols-3 gap-4 text-sm">
+                                            <div>
+                                                <span className="text-primary-600">Área total:</span>
+                                                <span className="ml-2 font-medium text-primary-900">{planSummary.area} m²</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-primary-600">Total de atividades:</span>
+                                                <span className="ml-2 font-medium text-primary-900">{planSummary.totalActivities}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-primary-600">Tempo estimado total:</span>
+                                                <span className="ml-2 font-medium text-primary-900">{formatTime(planSummary.totalMinutes)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </form>
+                        </div>
+
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+                            >
+                                Salvar Plano
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

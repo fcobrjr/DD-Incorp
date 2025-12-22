@@ -1,0 +1,136 @@
+Modal Novo Plano de Trabalho
+(com campo único de pesquisa)
+🟦 Cabeçalho do Modal
+[Novo Plano de Trabalho]
+-------------------------------------------------
+
+
+Título fixo
+
+Botão fechar (X)
+
+Sem textos extras
+
+🟨 Seção 1 — Identificação do Local (campo único)
+Local / Área Comum *
+[ 🔍 Pesquisa | Buscar por cliente, local, sublocal ou ambiente… ]
+
+Comportamento do campo único:
+
+Campo do tipo pesquisa livre + autocomplete
+
+O usuário pode digitar:
+
+Cliente
+
+Local
+
+Sublocal
+
+Ambiente
+
+À medida que digita, os resultados são afiltrados dinamicamente
+
+Resultado exibido na lista:
+Cliente > Local > Sublocal > Ambiente
+
+Após seleção:
+
+O sistema armazena internamente:
+
+Cliente
+
+Local
+
+Sublocal
+
+Ambiente
+
+O campo exibe a hierarquia completa para evitar ambiguidades
+
+🟨 Seção 2 — Dados do Plano
+Nome do Plano *
+[ Ex: Limpeza semanal – Cobertura ]
+
+Periodicidade *
+[ Diário | Semanal | Quinzenal | Mensal ]
+
+🟨 Seção 3 — Atividades do Plano
+Adicionar Atividade *
+[ 🔍 Pesquisar atividade existente... ]
+
+Comportamento:
+
+Pesquisa livre
+
+Seleção de atividade existente como template
+
+Pré-carrega automaticamente:
+
+Equipamentos
+
+Materiais
+
+SLA base (coeficiente)
+
+🧱 Card da Atividade Selecionada
+[ Atividade: Limpeza Técnica ]
+
+SLA base (coeficiente por m²) ℹ️
+[ 0,5 ]
+
+Área do local: 120 m²
+SLA calculado: 60 min
+
+Equipamentos:
+☑ Aspirador
+☑ Carrinho
+☑ EPI
+
+Materiais:
+☑ Detergente
+☑ Desinfetante
+
+[ Remover atividade ]
+
+
+ℹ️ Tooltip:
+
+O SLA informado é um coeficiente por metro quadrado.
+O cálculo final ocorre automaticamente no planejamento.
+
+⚠️ Regra de edição da atividade
+
+Se qualquer dado da atividade for alterado:
+
+Equipamento
+
+Material
+
+SLA
+
+O sistema deve exigir:
+
+⚠️ Esta atividade será salva como uma nova atividade.
+Informe um novo nome:
+[ ________________________ ]
+
+🟨 Seção 4 — Resumo do Plano (somente leitura)
+Resumo do Plano
+-----------------------------------
+Área total: 120 m²
+Total de atividades: 2
+Tempo estimado total: 1h 45min
+
+🟦 Rodapé do Modal
+[ Cancelar ]        [ Salvar Plano ]
+
+Regras finais:
+
+❌ Não criar empty states
+
+❌ Não adicionar campos extras
+
+❌ Não alterar fluxo
+
+✅ Usar padrão visual da página Atividades
