@@ -517,15 +517,19 @@ const Planning: React.FC = () => {
                         if (!area) return null;
                         return (
                             <div key={plan.id} className="bg-white rounded-lg shadow-md border border-gray-200 flex flex-col transition-all duration-300 hover:shadow-lg overflow-hidden">
-                                <div className="p-4 border-b border-gray-100 relative group/header">
+                                <div className="p-3 border-b border-gray-100 relative group/header">
                                     <h3 className="font-bold text-gray-900 text-sm">{area.client}</h3>
-                                    <p className="text-xs text-gray-500 mt-1">{area.environment}</p>
-                                    <div className="absolute top-3 right-2 flex space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
+                                    <div className="text-[10px] text-gray-600 space-y-0.5 mt-1.5">
+                                        <p><span className="font-semibold">Local:</span> {area.location}</p>
+                                        <p><span className="font-semibold">Sublocal:</span> {area.subLocation}</p>
+                                        <p><span className="font-semibold">Ambiente:</span> {area.environment}</p>
+                                    </div>
+                                    <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
                                         <button onClick={() => openModal(plan)} className="p-1 rounded-full text-primary-600 hover:bg-primary-50"><EditIcon className="w-4 h-4"/></button>
                                         <button onClick={() => handleDelete(plan.id)} className="p-1 rounded-full text-red-600 hover:bg-red-50"><TrashIcon className="w-4 h-4"/></button>
                                     </div>
                                 </div>
-                                <div className="p-3 bg-gray-50/50 flex-1 space-y-2 max-h-48 overflow-y-auto">
+                                <div className="p-3 bg-gray-50/50 flex-1 space-y-2 max-h-40 overflow-y-auto">
                                     {(plan.plannedActivities || []).map(pa => (
                                         <div key={pa.id} className="bg-white p-2 rounded border border-gray-100 text-[11px] font-medium text-gray-700">
                                             {activities.find(a => a.id === pa.activityId)?.name}
@@ -533,7 +537,7 @@ const Planning: React.FC = () => {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="px-4 py-2 border-t border-gray-100 bg-white flex justify-between text-[10px] font-bold text-gray-400">
+                                <div className="px-3 py-2 border-t border-gray-100 bg-white flex justify-between text-[10px] font-bold text-gray-400">
                                     <span>{plan.plannedActivities?.length || 0} Atividades</span>
                                     <span>{area.area}m²</span>
                                 </div>
