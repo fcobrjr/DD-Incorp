@@ -157,6 +157,7 @@ Páginas com filtros:
 - **Team**: Nome, Setor, Status (Ativos/Inativos)
 
 ## Recent Changes
+- 2025-12-23: Substituído filtros nativos por SearchableSelect com busca em CommonAreas, Planning e Schedule
 - 2025-12-23: Adicionado coluna "Ações" na tabela de Schedule com botões de visualizar e deletar
 - 2025-12-23: Aplicado padrão global "Filtros Avançados" em todas as páginas com filtros
 - 2025-12-23: Adicionado informações de cliente, local, sublocal e ambiente aos cards de Planning
