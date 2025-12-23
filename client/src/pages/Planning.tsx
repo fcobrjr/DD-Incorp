@@ -470,46 +470,46 @@ const Planning: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos os clientes'}, ...uniqueClients.map(cli => ({value: cli, label: cli}))]}
+                                options={[{value: '', label: 'Todos'}, ...uniqueClients.map(cli => ({value: cli, label: cli}))]}
                                 value={filters.client}
                                 onChange={(val) => setFilters({...filters, client: val})}
-                                placeholder="Todos os clientes"
+                                placeholder="Todos"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos os locais'}, ...commonAreas.reduce((acc, a) => {
+                                options={[{value: '', label: 'Todos'}, ...commonAreas.reduce((acc, a) => {
                                     if (!acc.includes(a.location)) acc.push(a.location);
                                     return acc;
                                 }, [] as string[]).sort().map(loc => ({value: loc, label: loc}))]}
                                 value={filters.location}
                                 onChange={(val) => setFilters({...filters, location: val})}
-                                placeholder="Todos os locais"
+                                placeholder="Todos"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos os sublocais'}, ...commonAreas.reduce((acc, a) => {
+                                options={[{value: '', label: 'Todos'}, ...commonAreas.reduce((acc, a) => {
                                     if (!acc.includes(a.subLocation)) acc.push(a.subLocation);
                                     return acc;
                                 }, [] as string[]).sort().map(sub => ({value: sub, label: sub}))]}
                                 value={filters.subLocation}
                                 onChange={(val) => setFilters({...filters, subLocation: val})}
-                                placeholder="Todos os sublocais"
+                                placeholder="Todos"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos os ambientes'}, ...commonAreas.reduce((acc, a) => {
+                                options={[{value: '', label: 'Todos'}, ...commonAreas.reduce((acc, a) => {
                                     if (!acc.includes(a.environment)) acc.push(a.environment);
                                     return acc;
                                 }, [] as string[]).sort().map(env => ({value: env, label: env}))]}
                                 value={filters.environment}
                                 onChange={(val) => setFilters({...filters, environment: val})}
-                                placeholder="Todos os ambientes"
+                                placeholder="Todos"
                             />
                         </div>
                     </div>
