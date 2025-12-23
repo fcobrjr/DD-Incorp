@@ -96,6 +96,12 @@ const Schedule: React.FC = () => {
     const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
     const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week' | 'day'>('month');
 
+    const handleDeleteScheduled = (scheduledActivityId: string) => {
+        if (window.confirm("Tem certeza que deseja remover esta atividade agendada?")) {
+            setScheduledActivities(prev => prev.filter(sa => sa.id !== scheduledActivityId));
+        }
+    };
+
     const allEnrichedActivities = useMemo<EnrichedActivity[]>(() => {
         const scheduledIds = new Set(scheduledActivities.map(sa => sa.plannedActivityId));
         const enriched: EnrichedActivity[] = [];
@@ -404,7 +410,7 @@ const Schedule: React.FC = () => {
                                     <td className="px-6 py-4 text-sm text-gray-500">{item.environment}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{formatDateDisplay(item.plannedDate || '')}</td>
                                     <td className="px-6 py-4"><span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_CONFIG[item.status].bg} ${STATUS_CONFIG[item.status].color} ${STATUS_CONFIG[item.status].border}`}>{item.status}</span></td>
-                                    <td className="px-6 py-4 text-right"><button onClick={() => { setSelectedActivity(item); setIsPanelOpen(true); }} className="text-primary-600 p-2 hover:bg-primary-100 rounded-full transition-colors"><EyeIcon className="w-5 h-5"/></button></td>
+                                    <td className="px-6 py-4 text-right space-x-1 flex justify-end"><button onClick={() => { setSelectedActivity(item); setIsPanelOpen(true); }} className="text-primary-600 p-2 hover:bg-primary-100 rounded-full transition-colors"><EyeIcon className="w-5 h-5"/></button><button onClick={() => handleDeleteScheduled(item.id)} className="text-red-600 p-2 hover:bg-red-50 rounded-full transition-colors"><TrashIcon className="w-5 h-5"/></button></td>
                                 </tr>
                             )) : (
                                 <tr>

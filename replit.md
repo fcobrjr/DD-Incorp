@@ -137,9 +137,10 @@ Governança obrigatória:
 
 ## Schedule (Agenda)
 - **Filtros em cascata**: Pesquisa, Cliente, Local, Sublocal, Ambiente (mesma lógica Planning)
-- **Colunas de identificação**: Cliente, Local, Sublocal, Ambiente, Atividade, Data, Status
+- **Colunas de identificação**: Cliente, Local, Sublocal, Ambiente, Atividade, Data, Status, Ações
 - **Visualizações**: Calendário (mês/semana/dia) e Tabela
 - **Status de atividades**: Aguardando Programação, Não Iniciada, Em Execução, Concluída, Atrasada
+- **Ações na tabela**: Visualizar (eye icon) e Deletar (trash icon)
 
 ## Filtros Avançados (Padrão Global)
 Todas as páginas com filtros seguem o padrão do ToolTrackerPro2:
@@ -156,6 +157,7 @@ Páginas com filtros:
 - **Team**: Nome, Setor, Status (Ativos/Inativos)
 
 ## Recent Changes
+- 2025-12-23: Adicionado coluna "Ações" na tabela de Schedule com botões de visualizar e deletar
 - 2025-12-23: Aplicado padrão global "Filtros Avançados" em todas as páginas com filtros
 - 2025-12-23: Adicionado informações de cliente, local, sublocal e ambiente aos cards de Planning
 - 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Planning com colunas de localização
