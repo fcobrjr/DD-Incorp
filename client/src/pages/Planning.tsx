@@ -548,7 +548,7 @@ const Planning: React.FC = () => {
                         <div className="text-center py-10 text-gray-500 col-span-full">Nenhum plano cadastrado.</div>
                     )
                 ) : (
-                    <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
