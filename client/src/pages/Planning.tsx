@@ -424,6 +424,9 @@ const Planning: React.FC = () => {
                 if (!matches) return false;
             }
             if (filters.client && area.client !== filters.client) return false;
+            if (filters.location && area.location !== filters.location) return false;
+            if (filters.subLocation && area.subLocation !== filters.subLocation) return false;
+            if (filters.environment && area.environment !== filters.environment) return false;
             if (filters.activityId && !(plan.plannedActivities || []).some(pa => pa.activityId === filters.activityId)) return false;
             return true;
         });
@@ -435,7 +438,7 @@ const Planning: React.FC = () => {
                 const area = commonAreas.find(ca => ca.id === plan.commonAreaId);
                 const activity = activities.find(a => a.id === pa.activityId);
                 const sla = (activity?.sla || 0) + (activity?.slaCoefficient ? (activity.slaCoefficient * (area?.area || 0)) : 0);
-                return { id: pa.id, periodicity: pa.periodicity, client: area?.client || 'N/A', environment: area?.environment || 'N/A', activityName: activity?.name || 'N/A', activitySla: sla, originalPlan: plan };
+                return { id: pa.id, periodicity: pa.periodicity, client: area?.client || 'N/A', location: area?.location || 'N/A', subLocation: area?.subLocation || 'N/A', environment: area?.environment || 'N/A', activityName: activity?.name || 'N/A', activitySla: sla, originalPlan: plan };
             })
         );
     }, [filteredWorkPlans, commonAreas, activities]);
@@ -458,7 +461,7 @@ const Planning: React.FC = () => {
 
             {showFilters && (
                 <div className="mb-6 p-6 bg-white rounded-lg shadow-md border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Pesquisa</label>
                             <input type="text" value={filters.search} onChange={handleFilterChange} name="search" placeholder="Termo livre..." className="block w-full px-3 py-1.5 border border-gray-300 rounded-md bg-white focus:ring-primary-500 sm:text-sm"/>
@@ -468,6 +471,36 @@ const Planning: React.FC = () => {
                             <select name="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5">
                                 <option value="">Todos</option>
                                 {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Local</label>
+                            <select name="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                                <option value="">Todos</option>
+                                {!filters.client ? null : commonAreas.filter(a => a.client === filters.client).reduce((acc, a) => {
+                                    if (!acc.includes(a.location)) acc.push(a.location);
+                                    return acc;
+                                }, [] as string[]).sort().map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Sublocal</label>
+                            <select name="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                                <option value="">Todos</option>
+                                {!filters.location ? null : commonAreas.filter(a => a.client === filters.client && a.location === filters.location).reduce((acc, a) => {
+                                    if (!acc.includes(a.subLocation)) acc.push(a.subLocation);
+                                    return acc;
+                                }, [] as string[]).sort().map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Ambiente</label>
+                            <select name="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
+                                <option value="">Todos</option>
+                                {!filters.subLocation ? null : commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).reduce((acc, a) => {
+                                    if (!acc.includes(a.environment)) acc.push(a.environment);
+                                    return acc;
+                                }, [] as string[]).sort().map(env => <option key={env} value={env}>{env}</option>)}
                             </select>
                         </div>
                     </div>
@@ -515,6 +548,8 @@ const Planning: React.FC = () => {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
@@ -525,6 +560,8 @@ const Planning: React.FC = () => {
                                 {flattenedActivities.length > 0 ? flattenedActivities.map(item => (
                                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.client}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.location}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.subLocation}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.environment}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.activityName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -536,7 +573,7 @@ const Planning: React.FC = () => {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan={5} className="text-center py-10 text-gray-500">Nenhum plano cadastrado.</td>
+                                        <td colSpan={7} className="text-center py-10 text-gray-500">Nenhum plano cadastrado.</td>
                                     </tr>
                                 )}
                             </tbody>

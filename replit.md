@@ -128,13 +128,20 @@ Governança obrigatória:
 - **Modal obrigatório**: Usuário deve salvar modificações como nova atividade antes de continuar
 - **Regras de validação**: Nome não pode ser igual ao original, cria automaticamente nova atividade no cadastro
 
+## Planning (Planejamento) Table
+- **Filtros em cascata**: Pesquisa, Cliente, Local, Sublocal, Ambiente
+- **Colunas de localização**: Cliente, Local, Sublocal, Ambiente, Atividade, Periodicidade
+- **Visualizações**: Cards (grid) e Tabela
+- **Funcionalidades**: Editar e deletar planos de trabalho
+
 ## Schedule (Agenda)
-- **Filtros de localização**: Cliente, Local, Sublocal, Ambiente (cascata com validação)
-- **Colunas de identificação**: Todas as tabelas mostram localização completa
-- **Visualizações**: Calendário (mês/semana/dia) e tabela
+- **Filtros em cascata**: Pesquisa, Cliente, Local, Sublocal, Ambiente (mesma lógica Planning)
+- **Colunas de identificação**: Cliente, Local, Sublocal, Ambiente, Atividade, Data, Status
+- **Visualizações**: Calendário (mês/semana/dia) e Tabela
 - **Status de atividades**: Aguardando Programação, Não Iniciada, Em Execução, Concluída, Atrasada
 
 ## Recent Changes
+- 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Planning com colunas de localização
 - 2025-12-23: Refatorado modal de Plano de Trabalho com governança de atividades e detecção de alterações
 - 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Schedule com colunas de localização
 - 2025-12-19: Implementado Planejamento com SLA calculado dinamicamente e busca de atividades
