@@ -329,7 +329,7 @@ const Schedule: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos'}, ...uniqueClients.map(c => ({value: c, label: c}))]}
+                                options={[{value: '', label: 'Todos'}, ...uniqueClients.filter(c => c).map(c => ({value: c, label: c}))]}
                                 value={filters.client}
                                 onChange={(val) => setFilters({...filters, client: val})}
                                 placeholder="Todos"
@@ -338,7 +338,7 @@ const Schedule: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos'}, ...uniqueLocations.map(l => ({value: l, label: l}))]}
+                                options={[{value: '', label: 'Todos'}, ...uniqueLocations.filter(l => l).map(l => ({value: l, label: l}))]}
                                 value={filters.location}
                                 onChange={(val) => setFilters({...filters, location: val})}
                                 placeholder="Todos"
@@ -347,7 +347,7 @@ const Schedule: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos'}, ...uniqueSubLocations.map(s => ({value: s, label: s}))]}
+                                options={[{value: '', label: 'Todos'}, ...uniqueSubLocations.filter(s => s).map(s => ({value: s, label: s}))]}
                                 value={filters.subLocation}
                                 onChange={(val) => setFilters({...filters, subLocation: val})}
                                 placeholder="Todos"
@@ -356,7 +356,7 @@ const Schedule: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos'}, ...uniqueEnvironments.map(env => ({value: env, label: env}))]}
+                                options={[{value: '', label: 'Todos'}, ...uniqueEnvironments.filter(e => e).map(env => ({value: env, label: env}))]}
                                 value={filters.environment}
                                 onChange={(val) => setFilters({...filters, environment: val})}
                                 placeholder="Todos"

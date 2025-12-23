@@ -480,7 +480,7 @@ const Planning: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
                             <SearchableSelect
                                 options={[{value: '', label: 'Todos'}, ...commonAreas.reduce((acc, a) => {
-                                    if (!acc.includes(a.location)) acc.push(a.location);
+                                    if (a.location && !acc.includes(a.location)) acc.push(a.location);
                                     return acc;
                                 }, [] as string[]).sort().map(loc => ({value: loc, label: loc}))]}
                                 value={filters.location}
@@ -492,7 +492,7 @@ const Planning: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
                             <SearchableSelect
                                 options={[{value: '', label: 'Todos'}, ...commonAreas.reduce((acc, a) => {
-                                    if (!acc.includes(a.subLocation)) acc.push(a.subLocation);
+                                    if (a.subLocation && !acc.includes(a.subLocation)) acc.push(a.subLocation);
                                     return acc;
                                 }, [] as string[]).sort().map(sub => ({value: sub, label: sub}))]}
                                 value={filters.subLocation}
@@ -504,7 +504,7 @@ const Planning: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
                             <SearchableSelect
                                 options={[{value: '', label: 'Todos'}, ...commonAreas.reduce((acc, a) => {
-                                    if (!acc.includes(a.environment)) acc.push(a.environment);
+                                    if (a.environment && !acc.includes(a.environment)) acc.push(a.environment);
                                     return acc;
                                 }, [] as string[]).sort().map(env => ({value: env, label: env}))]}
                                 value={filters.environment}

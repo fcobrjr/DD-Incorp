@@ -306,7 +306,7 @@ const filteredCommonAreas = useMemo(() => {
                   <div>
                       <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
                       <SearchableSelect
-                          options={[{value: '', label: 'Todos'}, ...uniqueClients.map(cli => ({value: cli, label: cli}))]}
+                          options={[{value: '', label: 'Todos'}, ...uniqueClients.filter(c => c).map(cli => ({value: cli, label: cli}))]}
                           value={filters.client}
                           onChange={(val) => setFilters({...filters, client: val})}
                           placeholder="Todos"
@@ -315,7 +315,7 @@ const filteredCommonAreas = useMemo(() => {
                   <div>
                       <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">Local</label>
                       <SearchableSelect
-                          options={[{value: '', label: 'Todos'}, ...uniqueLocations.map(loc => ({value: loc, label: loc}))]}
+                          options={[{value: '', label: 'Todos'}, ...uniqueLocations.filter(l => l).map(loc => ({value: loc, label: loc}))]}
                           value={filters.location}
                           onChange={(val) => setFilters({...filters, location: val})}
                           placeholder="Todos"
@@ -324,7 +324,7 @@ const filteredCommonAreas = useMemo(() => {
                   <div>
                       <label htmlFor="subLocation" className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
                       <SearchableSelect
-                          options={[{value: '', label: 'Todos'}, ...uniqueSubLocations.map(sub => ({value: sub, label: sub}))]}
+                          options={[{value: '', label: 'Todos'}, ...uniqueSubLocations.filter(s => s).map(sub => ({value: sub, label: sub}))]}
                           value={filters.subLocation}
                           onChange={(val) => setFilters({...filters, subLocation: val})}
                           placeholder="Todos"
@@ -333,7 +333,7 @@ const filteredCommonAreas = useMemo(() => {
                   <div>
                       <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
                       <SearchableSelect
-                          options={[{value: '', label: 'Todos'}, ...uniqueEnvironments.map(env => ({value: env, label: env}))]}
+                          options={[{value: '', label: 'Todos'}, ...uniqueEnvironments.filter(e => e).map(env => ({value: env, label: env}))]}
                           value={filters.environment}
                           onChange={(val) => setFilters({...filters, environment: val})}
                           placeholder="Todos"
