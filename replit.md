@@ -141,7 +141,22 @@ Governança obrigatória:
 - **Visualizações**: Calendário (mês/semana/dia) e Tabela
 - **Status de atividades**: Aguardando Programação, Não Iniciada, Em Execução, Concluída, Atrasada
 
+## Filtros Avançados (Padrão Global)
+Todas as páginas com filtros seguem o padrão do ToolTrackerPro2:
+- **Título**: "Filtros Avançados" no topo do bloco
+- **Layout**: Horizontal com grid responsivo
+- **Campo de busca**: Primeiro campo, label "Nome", placeholder "Buscar por nome..."
+- **Dropdowns**: Labels padronizados, opções "Todos os X" como padrão
+- **Botão toggle**: "Filtros Avançados" / "Ocultar Filtros"
+
+Páginas com filtros:
+- **CommonAreas**: Nome, Cliente, Local, Sublocal, Ambiente (cascata)
+- **Planning**: Nome, Cliente, Local, Sublocal, Ambiente (cascata) + Limpar filtros
+- **Schedule**: Nome, Cliente, Local, Sublocal, Ambiente (cascata)
+- **Team**: Nome, Setor, Status (Ativos/Inativos)
+
 ## Recent Changes
+- 2025-12-23: Aplicado padrão global "Filtros Avançados" em todas as páginas com filtros
 - 2025-12-23: Adicionado informações de cliente, local, sublocal e ambiente aos cards de Planning
 - 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Planning com colunas de localização
 - 2025-12-23: Refatorado modal de Plano de Trabalho com governança de atividades e detecção de alterações
