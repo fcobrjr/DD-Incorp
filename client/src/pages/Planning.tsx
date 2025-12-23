@@ -469,40 +469,51 @@ const Planning: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                            <select name="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2">
-                                <option value="">Todos os clientes</option>
-                                {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
-                            </select>
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os clientes'}, ...uniqueClients.map(cli => ({value: cli, label: cli}))]}
+                                value={filters.client}
+                                onChange={(val) => setFilters({...filters, client: val, location: '', subLocation: '', environment: ''})}
+                                placeholder="Todos os clientes"
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
-                            <select name="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
-                                <option value="">Todos os locais</option>
-                                {!filters.client ? null : commonAreas.filter(a => a.client === filters.client).reduce((acc, a) => {
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os locais'}, ...(!filters.client ? [] : commonAreas.filter(a => a.client === filters.client).reduce((acc, a) => {
                                     if (!acc.includes(a.location)) acc.push(a.location);
                                     return acc;
-                                }, [] as string[]).sort().map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                            </select>
+                                }, [] as string[]).sort().map(loc => ({value: loc, label: loc})))]}
+                                value={filters.location}
+                                onChange={(val) => setFilters({...filters, location: val, subLocation: '', environment: ''})}
+                                placeholder="Todos os locais"
+                                disabled={!filters.client}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
-                            <select name="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
-                                <option value="">Todos os sublocais</option>
-                                {!filters.location ? null : commonAreas.filter(a => a.client === filters.client && a.location === filters.location).reduce((acc, a) => {
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os sublocais'}, ...(!filters.location ? [] : commonAreas.filter(a => a.client === filters.client && a.location === filters.location).reduce((acc, a) => {
                                     if (!acc.includes(a.subLocation)) acc.push(a.subLocation);
                                     return acc;
-                                }, [] as string[]).sort().map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                            </select>
+                                }, [] as string[]).sort().map(sub => ({value: sub, label: sub})))]}
+                                value={filters.subLocation}
+                                onChange={(val) => setFilters({...filters, subLocation: val, environment: ''})}
+                                placeholder="Todos os sublocais"
+                                disabled={!filters.location}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
-                            <select name="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
-                                <option value="">Todos os ambientes</option>
-                                {!filters.subLocation ? null : commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).reduce((acc, a) => {
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os ambientes'}, ...(!filters.subLocation ? [] : commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).reduce((acc, a) => {
                                     if (!acc.includes(a.environment)) acc.push(a.environment);
                                     return acc;
-                                }, [] as string[]).sort().map(env => <option key={env} value={env}>{env}</option>)}
-                            </select>
+                                }, [] as string[]).sort().map(env => ({value: env, label: env})))]}
+                                value={filters.environment}
+                                onChange={(val) => setFilters({...filters, environment: val})}
+                                placeholder="Todos os ambientes"
+                                disabled={!filters.subLocation}
+                            />
                         </div>
                     </div>
                     <div className="mt-4 flex justify-end">

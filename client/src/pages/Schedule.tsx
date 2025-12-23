@@ -328,31 +328,42 @@ const Schedule: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                            <select value={filters.client} onChange={e => setFilters({...filters, client: e.target.value, location: '', subLocation: '', environment: ''})} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500">
-                                <option value="">Todos os clientes</option>
-                                {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os clientes'}, ...uniqueClients.map(c => ({value: c, label: c}))]}
+                                value={filters.client}
+                                onChange={(val) => setFilters({...filters, client: val, location: '', subLocation: '', environment: ''})}
+                                placeholder="Todos os clientes"
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
-                            <select value={filters.location} onChange={e => setFilters({...filters, location: e.target.value, subLocation: '', environment: ''})} disabled={!filters.client} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500 disabled:bg-gray-50">
-                                <option value="">Todos os locais</option>
-                                {uniqueLocations.map(l => <option key={l} value={l}>{l}</option>)}
-                            </select>
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os locais'}, ...uniqueLocations.map(l => ({value: l, label: l}))]}
+                                value={filters.location}
+                                onChange={(val) => setFilters({...filters, location: val, subLocation: '', environment: ''})}
+                                placeholder="Todos os locais"
+                                disabled={!filters.client}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
-                            <select value={filters.subLocation} onChange={e => setFilters({...filters, subLocation: e.target.value, environment: ''})} disabled={!filters.location} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500 disabled:bg-gray-50">
-                                <option value="">Todos os sublocais</option>
-                                {uniqueSubLocations.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os sublocais'}, ...uniqueSubLocations.map(s => ({value: s, label: s}))]}
+                                value={filters.subLocation}
+                                onChange={(val) => setFilters({...filters, subLocation: val, environment: ''})}
+                                placeholder="Todos os sublocais"
+                                disabled={!filters.location}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
-                            <select value={filters.environment} onChange={e => setFilters({...filters, environment: e.target.value})} disabled={!filters.subLocation} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500 disabled:bg-gray-50">
-                                <option value="">Todos os ambientes</option>
-                                {uniqueEnvironments.map(e => <option key={e} value={e}>{e}</option>)}
-                            </select>
+                            <SearchableSelect
+                                options={[{value: '', label: 'Todos os ambientes'}, ...uniqueEnvironments.map(env => ({value: env, label: env}))]}
+                                value={filters.environment}
+                                onChange={(val) => setFilters({...filters, environment: val})}
+                                placeholder="Todos os ambientes"
+                                disabled={!filters.subLocation}
+                            />
                         </div>
                     </div>
                 </div>
