@@ -140,11 +140,9 @@ Governança obrigatória:
 - **Colunas de identificação**: Cliente, Local, Sublocal, Ambiente, Atividade, Data, Status
 - **Visualizações**: Calendário (mês/semana/dia) e Tabela
 - **Status de atividades**: Aguardando Programação, Não Iniciada, Em Execução, Concluída, Atrasada
-- **IMPORTANTE**: Atividades "Aguardando Programação" (recém-criadas) agora aparecem tanto na tabela quanto no calendário
 
 ## Recent Changes
-- 2025-12-23: CORRIGIDO bug onde planos criados não apareciam na página Agenda - atividades "Aguardando Programação" agora aparecem na visualização em tabela
-- 2025-12-23: Adicionado informações de cliente, local, sublocal e ambiente aos cards de Planning para melhor identificação de locais
+- 2025-12-23: Adicionado informações de cliente, local, sublocal e ambiente aos cards de Planning
 - 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Planning com colunas de localização
 - 2025-12-23: Refatorado modal de Plano de Trabalho com governança de atividades e detecção de alterações
 - 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Schedule com colunas de localização

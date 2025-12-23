@@ -153,11 +153,9 @@ const Schedule: React.FC = () => {
             if (filters.subLocation && act.subLocation !== filters.subLocation) return false;
             if (filters.environment && act.environment !== filters.environment) return false;
             if (viewMode === 'table') {
-                // Mostrar atividades com data ou "Aguardando Programação"
-                if (act.plannedDate) {
-                    if (filters.startDate && act.plannedDate < filters.startDate) return false;
-                    if (filters.endDate && act.plannedDate > filters.endDate) return false;
-                }
+                if (!act.plannedDate) return false;
+                if (filters.startDate && act.plannedDate < filters.startDate) return false;
+                if (filters.endDate && act.plannedDate > filters.endDate) return false;
             }
             return true;
         }).sort((a,b) => (a.plannedDate || '9999').localeCompare(b.plannedDate || '9999'));
