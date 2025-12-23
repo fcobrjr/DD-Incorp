@@ -3,7 +3,11 @@ import { AppContext } from '../context/AppContext';
 import { WorkPlan, PlannedActivity, Periodicity, Activity, CorrelatedResource } from '@shared/types';
 import { TrashIcon, EditIcon, PlusIcon, LayoutGridIcon, ListIcon, FilterIcon } from '../components/icons';
 import PageHeader from '../components/PageHeader';
-import InfoTooltip from '../components/InfoTooltip';
+import SearchableSelect from '../components/SearchableSelect';
+
+// No planejamento, atividades existentes nunca são sobrescritas.
+// Qualquer alteração em SLA, materiais ou ferramentas
+// exige salvar como nova atividade.
 
 const PERIODICITY_OPTIONS: Periodicity[] = ['Diário', 'Semanal', 'Quinzenal', 'Mensal'];
 
@@ -12,10 +16,6 @@ const PERIODICITY_COLOR_CONFIG: { [key: string]: { text: string; bg: string; } }
     'Semanal': { text: 'text-orange-800', bg: 'bg-orange-100' },
     'Quinzenal': { text: 'text-amber-800', bg: 'bg-amber-100' },
     'Mensal': { text: 'text-yellow-800', bg: 'bg-yellow-100' },
-    'Bimestral': { text: 'text-lime-800', bg: 'bg-lime-100' },
-    'Trimestral': { text: 'text-green-800', bg: 'bg-green-100' },
-    'Semestral': { text: 'text-teal-800', bg: 'bg-teal-100' },
-    'Anual': { text: 'text-cyan-800', bg: 'bg-cyan-100' },
 };
 
 const getPeriodicityStyle = (p: string) => {
@@ -26,11 +26,11 @@ interface PlanActivityForm {
     id: string;
     activityId: string;
     activityName: string;
+    slaFixed: number;
     slaCoefficient: number;
     tools: CorrelatedResource[];
     materials: CorrelatedResource[];
-    isModified: boolean;
-    newActivityName?: string;
+    hasChanges: boolean;
 }
 
 interface WorkPlanForm {
@@ -59,6 +59,10 @@ const Planning: React.FC = () => {
     const [activitySearch, setActivitySearch] = useState('');
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
     const [showActivityDropdown, setShowActivityDropdown] = useState(false);
+
+    const [saveActivityModalOpen, setSaveActivityModalOpen] = useState(false);
+    const [activityToSave, setActivityToSave] = useState<PlanActivityForm | null>(null);
+    const [newActivityName, setNewActivityName] = useState('');
 
     const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
     const [showFilters, setShowFilters] = useState(false);
@@ -125,7 +129,8 @@ const Planning: React.FC = () => {
     const planSummary = useMemo(() => {
         if (!formState || !selectedArea) return { area: 0, totalActivities: 0, totalMinutes: 0 };
         const totalMinutes = formState.activities.reduce((sum, act) => {
-            return sum + (act.slaCoefficient * selectedArea.area);
+            const time = act.slaFixed + (act.slaCoefficient * selectedArea.area);
+            return sum + time;
         }, 0);
         return {
             area: selectedArea.area,
@@ -133,6 +138,10 @@ const Planning: React.FC = () => {
             totalMinutes
         };
     }, [formState, selectedArea]);
+
+    const hasAnyChanges = useMemo(() => {
+        return formState?.activities.some(act => act.hasChanges) ?? false;
+    }, [formState?.activities]);
 
     const formatTime = (minutes: number) => {
         const h = Math.floor(minutes / 60);
@@ -151,10 +160,11 @@ const Planning: React.FC = () => {
                     id: pa.id,
                     activityId: pa.activityId,
                     activityName: act?.name || '',
+                    slaFixed: act?.sla || 0,
                     slaCoefficient: act?.slaCoefficient || 0,
                     tools: act?.tools || [],
                     materials: act?.materials || [],
-                    isModified: false
+                    hasChanges: false
                 };
             });
             setFormState({
@@ -223,10 +233,11 @@ const Planning: React.FC = () => {
             id: `pa-${Date.now()}-${activityId}`,
             activityId,
             activityName: activity.name,
+            slaFixed: activity.sla || 0,
             slaCoefficient: activity.slaCoefficient || 0,
             tools: activity.tools || [],
             materials: activity.materials || [],
-            isModified: false
+            hasChanges: false
         };
 
         setFormState(prev => prev ? {
@@ -244,63 +255,71 @@ const Planning: React.FC = () => {
         } : null);
     };
 
-    const updateActivitySla = (activityFormId: string, slaCoefficient: number) => {
+    const updateActivitySla = (activityFormId: string, field: 'fixed' | 'coefficient', value: number) => {
         setFormState(prev => prev ? {
             ...prev,
             activities: prev.activities.map(a => 
                 a.id === activityFormId 
-                    ? { ...a, slaCoefficient, isModified: true }
+                    ? { 
+                        ...a, 
+                        [field === 'fixed' ? 'slaFixed' : 'slaCoefficient']: value,
+                        hasChanges: true
+                    }
                     : a
             )
         } : null);
     };
 
-    const toggleActivityTool = (activityFormId: string, toolId: string) => {
+    const addResourceToActivity = (activityFormId: string, type: 'tools' | 'materials', resourceId: string) => {
+        if (!resourceId) return;
+        
         setFormState(prev => prev ? {
             ...prev,
             activities: prev.activities.map(a => {
                 if (a.id !== activityFormId) return a;
-                const exists = a.tools.some(t => t.resourceId === toolId);
+                const list = type === 'tools' ? a.tools : a.materials;
+                if (list.some(r => r.resourceId === resourceId)) return a;
+                
                 return {
                     ...a,
-                    tools: exists 
-                        ? a.tools.filter(t => t.resourceId !== toolId)
-                        : [...a.tools, { resourceId: toolId, quantity: 1 }],
-                    isModified: true
+                    [type]: [...list, { resourceId, quantity: 1 }],
+                    hasChanges: true
                 };
             })
         } : null);
     };
 
-    const toggleActivityMaterial = (activityFormId: string, materialId: string) => {
+    const updateResourceQuantity = (activityFormId: string, type: 'tools' | 'materials', resourceId: string, quantity: number) => {
         setFormState(prev => prev ? {
             ...prev,
             activities: prev.activities.map(a => {
                 if (a.id !== activityFormId) return a;
-                const exists = a.materials.some(m => m.resourceId === materialId);
+                const list = type === 'tools' ? a.tools : a.materials;
                 return {
                     ...a,
-                    materials: exists 
-                        ? a.materials.filter(m => m.resourceId !== materialId)
-                        : [...a.materials, { resourceId: materialId, quantity: 1 }],
-                    isModified: true
+                    [type]: list.map(r => r.resourceId === resourceId ? { ...r, quantity: Math.max(0, quantity) } : r),
+                    hasChanges: true
                 };
             })
         } : null);
     };
 
-    const updateNewActivityName = (activityFormId: string, name: string) => {
+    const removeResource = (activityFormId: string, type: 'tools' | 'materials', resourceId: string) => {
         setFormState(prev => prev ? {
             ...prev,
-            activities: prev.activities.map(a => 
-                a.id === activityFormId 
-                    ? { ...a, newActivityName: name }
-                    : a
-            )
+            activities: prev.activities.map(a => {
+                if (a.id !== activityFormId) return a;
+                const list = type === 'tools' ? a.tools : a.materials;
+                return {
+                    ...a,
+                    [type]: list.filter(r => r.resourceId !== resourceId),
+                    hasChanges: true
+                };
+            })
         } : null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmitPlan = (e: React.FormEvent) => {
         e.preventDefault();
         if (!formState || !formState.commonAreaId) {
             alert("Por favor, selecione uma Área Comum.");
@@ -315,28 +334,16 @@ const Planning: React.FC = () => {
             return;
         }
 
-        for (const act of formState.activities) {
-            if (act.isModified && !act.newActivityName?.trim()) {
-                alert(`A atividade "${act.activityName}" foi modificada. Por favor, informe um novo nome.`);
-                return;
-            }
+        if (hasAnyChanges) {
+            alert("Você tem atividades modificadas. É necessário salvá-las como novas atividades antes de continuar.");
+            return;
         }
 
-        formState.activities.forEach(act => {
-            if (act.isModified && act.newActivityName) {
-                const newActivity: Activity = {
-                    id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-                    name: act.newActivityName,
-                    description: `Derivada de: ${act.activityName}`,
-                    sla: 0,
-                    slaCoefficient: act.slaCoefficient,
-                    tools: act.tools,
-                    materials: act.materials
-                };
-                setActivities(prev => [...prev, newActivity]);
-                act.activityId = newActivity.id;
-            }
-        });
+        savePlan();
+    };
+
+    const savePlan = () => {
+        if (!formState) return;
 
         const plannedActivities: PlannedActivity[] = formState.activities.map(act => ({
             id: act.id,
@@ -360,6 +367,45 @@ const Planning: React.FC = () => {
             setWorkPlans(prev => [...prev, workPlan]);
         }
         closeModal();
+    };
+
+    const handleSaveModifiedActivity = () => {
+        if (!activityToSave || !formState) return;
+        if (!newActivityName.trim()) {
+            alert("Por favor, informe um nome para a nova atividade.");
+            return;
+        }
+        if (newActivityName.trim() === activityToSave.activityName) {
+            alert("O nome deve ser diferente do original.");
+            return;
+        }
+
+        const newActivity: Activity = {
+            id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            name: newActivityName.trim(),
+            description: `Derivada de: ${activityToSave.activityName}`,
+            sla: activityToSave.slaFixed,
+            slaCoefficient: activityToSave.slaCoefficient,
+            tools: activityToSave.tools,
+            materials: activityToSave.materials
+        };
+
+        setActivities(prev => [...prev, newActivity]);
+
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.map(a => 
+                a.id === activityToSave.id 
+                    ? { ...a, activityId: newActivity.id, hasChanges: false }
+                    : a
+            )
+        } : null);
+
+        setSaveActivityModalOpen(false);
+        setActivityToSave(null);
+        setNewActivityName('');
+
+        savePlan();
     };
 
     const handleDelete = (planId: string) => {
@@ -510,7 +556,7 @@ const Planning: React.FC = () => {
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6">
-                            <form onSubmit={handleSubmit} className="space-y-6">
+                            <form onSubmit={handleSubmitPlan} className="space-y-6">
                                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                     <h4 className="text-sm font-semibold text-gray-700 mb-3">Identificação do Local</h4>
                                     <div className="relative">
@@ -620,7 +666,6 @@ const Planning: React.FC = () => {
                                                         className="w-full text-left px-4 py-2 text-sm hover:bg-primary-50 transition-colors text-gray-700"
                                                     >
                                                         <span className="font-medium">{act.name}</span>
-                                                        {act.description && <span className="text-gray-400 ml-2">- {act.description}</span>}
                                                     </button>
                                                 ))}
                                             </div>
@@ -629,7 +674,7 @@ const Planning: React.FC = () => {
 
                                     <div className="space-y-4">
                                         {formState.activities.map(act => (
-                                            <div key={act.id} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                                            <div key={act.id} className={`rounded-lg border p-4 shadow-sm ${act.hasChanges ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}>
                                                 <div className="flex justify-between items-start mb-3">
                                                     <h5 className="font-semibold text-gray-900">Atividade: {act.activityName}</h5>
                                                     <button
@@ -637,82 +682,115 @@ const Planning: React.FC = () => {
                                                         onClick={() => removeActivityFromPlan(act.id)}
                                                         className="text-red-500 hover:text-red-700 text-sm font-medium"
                                                     >
-                                                        Remover atividade
+                                                        Remover
                                                     </button>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                                    <div>
-                                                        <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                                                            SLA base (coeficiente por m²)
-                                                            <InfoTooltip text="O SLA informado é um coeficiente por metro quadrado. O cálculo final ocorre automaticamente no planejamento." />
-                                                        </label>
-                                                        <input
-                                                            type="number"
-                                                            step="0.1"
-                                                            min="0"
-                                                            value={act.slaCoefficient}
-                                                            onChange={(e) => updateActivitySla(act.id, parseFloat(e.target.value) || 0)}
-                                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                                        />
-                                                    </div>
-                                                    {selectedArea && (
-                                                        <div className="flex flex-col justify-end">
-                                                            <p className="text-sm text-gray-600">Área do local: <span className="font-medium">{selectedArea.area} m²</span></p>
-                                                            <p className="text-sm text-primary-600 font-medium">SLA calculado: {formatTime(act.slaCoefficient * selectedArea.area)}</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="text-sm font-medium text-gray-700">Equipamentos</label>
-                                                        <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                                                            {tools.map(tool => (
-                                                                <label key={tool.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={act.tools.some(t => t.resourceId === tool.id)}
-                                                                        onChange={() => toggleActivityTool(act.id, tool.id)}
-                                                                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                                                                    />
-                                                                    {tool.name}
-                                                                </label>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-sm font-medium text-gray-700">Materiais</label>
-                                                        <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                                                            {materials.map(mat => (
-                                                                <label key={mat.id} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={act.materials.some(m => m.resourceId === mat.id)}
-                                                                        onChange={() => toggleActivityMaterial(act.id, mat.id)}
-                                                                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                                                                    />
-                                                                    {mat.name}
-                                                                </label>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {act.isModified && (
-                                                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                                                        <p className="text-sm text-amber-800 font-medium mb-2">
-                                                            Esta atividade será salva como uma nova atividade. Informe um novo nome:
-                                                        </p>
-                                                        <input
-                                                            type="text"
-                                                            value={act.newActivityName || ''}
-                                                            onChange={(e) => updateNewActivityName(act.id, e.target.value)}
-                                                            placeholder="Nome da nova atividade..."
-                                                            className="block w-full px-3 py-2 border border-amber-300 rounded-md bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
-                                                        />
+                                                {act.hasChanges && (
+                                                    <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded text-sm text-amber-800">
+                                                        <strong>Alteração detectada:</strong> Esta atividade foi modificada e será salva como uma nova atividade.
                                                     </div>
                                                 )}
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">SLA fixo (min)</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            value={act.slaFixed}
+                                                            onChange={(e) => updateActivitySla(act.id, 'fixed', parseFloat(e.target.value) || 0)}
+                                                            className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">SLA por m² (min/m²)</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.1"
+                                                            value={act.slaCoefficient}
+                                                            onChange={(e) => updateActivitySla(act.id, 'coefficient', parseFloat(e.target.value) || 0)}
+                                                            className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {selectedArea && (
+                                                    <div className="mb-4 p-3 bg-blue-50 rounded text-sm text-blue-800">
+                                                        <p>Área do local: <strong>{selectedArea.area} m²</strong></p>
+                                                        <p>Tempo estimado: <strong>{formatTime(act.slaFixed + (act.slaCoefficient * selectedArea.area))}</strong></p>
+                                                    </div>
+                                                )}
+
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Equipamentos</label>
+                                                        <SearchableSelect
+                                                            options={tools.map(t => ({ value: t.id, label: t.name }))}
+                                                            value=""
+                                                            onChange={(val) => addResourceToActivity(act.id, 'tools', val)}
+                                                            placeholder="Adicionar equipamento..."
+                                                        />
+                                                        <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                                                            {act.tools.map(tool => {
+                                                                const toolObj = tools.find(t => t.id === tool.resourceId);
+                                                                if (!toolObj) return null;
+                                                                return (
+                                                                    <div key={tool.resourceId} className="flex items-center justify-between bg-gray-100 p-2 rounded text-sm">
+                                                                        <span>{toolObj.name}</span>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => removeResource(act.id, 'tools', tool.resourceId)}
+                                                                            className="text-red-500 hover:text-red-700"
+                                                                        >
+                                                                            ×
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Materiais</label>
+                                                        <SearchableSelect
+                                                            options={materials.map(m => ({ value: m.id, label: m.name }))}
+                                                            value=""
+                                                            onChange={(val) => addResourceToActivity(act.id, 'materials', val)}
+                                                            placeholder="Adicionar material..."
+                                                        />
+                                                        <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                                                            {act.materials.map(material => {
+                                                                const matObj = materials.find(m => m.id === material.resourceId);
+                                                                if (!matObj) return null;
+                                                                return (
+                                                                    <div key={material.resourceId} className="flex items-center justify-between bg-gray-100 p-2 rounded text-sm">
+                                                                        <div>
+                                                                            <span>{matObj.name}</span>
+                                                                            <input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                step="0.1"
+                                                                                value={material.quantity}
+                                                                                onChange={(e) => updateResourceQuantity(act.id, 'materials', material.resourceId, parseFloat(e.target.value))}
+                                                                                className="block w-16 mt-1 px-2 py-1 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs"
+                                                                            />
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => removeResource(act.id, 'materials', material.resourceId)}
+                                                                            className="text-red-500 hover:text-red-700"
+                                                                        >
+                                                                            ×
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -731,7 +809,7 @@ const Planning: React.FC = () => {
                                                 <span className="ml-2 font-medium text-primary-900">{planSummary.totalActivities}</span>
                                             </div>
                                             <div>
-                                                <span className="text-primary-600">Tempo estimado total:</span>
+                                                <span className="text-primary-600">Tempo estimado:</span>
                                                 <span className="ml-2 font-medium text-primary-900">{formatTime(planSummary.totalMinutes)}</span>
                                             </div>
                                         </div>
@@ -750,10 +828,57 @@ const Planning: React.FC = () => {
                             </button>
                             <button
                                 type="button"
-                                onClick={handleSubmit}
-                                className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+                                onClick={handleSubmitPlan}
+                                disabled={hasAnyChanges}
+                                className={`px-4 py-2 text-sm font-semibold text-white rounded-md transition-colors ${hasAnyChanges ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
                             >
-                                Salvar Plano
+                                {hasAnyChanges ? 'Salve as alterações de atividades' : 'Salvar Plano'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {saveActivityModalOpen && activityToSave && (
+                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <div className="px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900">Salvar como Nova Atividade</h3>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-sm text-gray-600 mb-4">
+                                <strong>{activityToSave.activityName}</strong> foi modificada. Para continuar, é necessário salvá-la como uma nova atividade.
+                            </p>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Nome da nova atividade *</label>
+                                <input
+                                    type="text"
+                                    value={newActivityName}
+                                    onChange={(e) => setNewActivityName(e.target.value)}
+                                    placeholder="Digite o novo nome..."
+                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSaveActivityModalOpen(false);
+                                    setActivityToSave(null);
+                                    setNewActivityName('');
+                                }}
+                                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSaveModifiedActivity}
+                                className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-md hover:bg-primary-700"
+                            >
+                                Salvar Atividade e Continuar
                             </button>
                         </div>
                     </div>

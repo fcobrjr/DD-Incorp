@@ -1,0 +1,238 @@
+refatorar o modal de criação/edição de Plano de Trabalho, mantendo toda a lógica de cálculo existente, mas ajustando UX, governança e fluxo de edição conforme descrito abaixo.
+
+🎯 OBJETIVO GERAL
+
+Tornar o modal de planejamento consistente com o Cadastro de Atividades
+
+Permitir edição de SLA, materiais e ferramentas
+
+Garantir governança obrigatória:
+👉 qualquer alteração estrutural deve gerar uma NOVA atividade
+
+Impedir que atividades existentes sejam sobrescritas
+
+Melhorar clareza visual e experiência do usuário
+
+1️⃣ CONCEITO-BASE (REGRA DE NEGÓCIO)
+
+O planejamento nunca altera uma atividade existente
+
+Atividades existentes são imutáveis no planejamento
+
+O planejamento pode editar valores, mas isso cria um fork da atividade
+
+🔐 Alterações consideradas estruturais:
+
+SLA fixo
+
+SLA por m²
+
+Materiais
+
+Ferramentas
+
+Qualquer alteração nesses itens:
+➡️ obriga salvar como nova atividade
+
+2️⃣ ATIVIDADE NO PLANEJAMENTO
+Comportamento inicial:
+
+Usuário seleciona uma atividade existente
+
+O sistema:
+
+Carrega SLA fixo
+
+Carrega SLA por m²
+
+Carrega materiais
+
+Carrega ferramentas
+
+Esses dados são exibidos como valores ativos, porém com controle de alteração.
+
+3️⃣ SLA — EDITÁVEL COM GOVERNANÇA
+Campos exibidos:
+
+SLA fixo (min)
+
+SLA por m² (min/m²)
+
+Regras:
+
+Os dois campos:
+
+✅ São editáveis
+
+⚠️ Têm detecção de alteração
+
+Ao editar qualquer SLA:
+
+Marcar a atividade como “modificada”
+
+Exibir aviso visual
+
+Bloquear salvar direto do plano
+
+Texto explicativo:
+
+Alterações em SLA exigem salvar como nova atividade.
+
+4️⃣ MATERIAIS E FERRAMENTAS
+Padrão visual obrigatório:
+
+Dropdown com pesquisa
+
+Mesmo componente usado no Cadastro de Atividades
+
+Nada de checkbox ou radio listando tudo
+
+Comportamento:
+
+Itens vêm pré-selecionados da atividade
+
+Usuário pode:
+
+Adicionar
+
+Remover
+
+Qualquer mudança:
+
+Marca atividade como modificada
+
+Exige salvar como nova atividade
+
+5️⃣ DETECÇÃO DE ALTERAÇÕES (REGRA CENTRAL)
+
+Criar um estado interno, por exemplo:
+
+hasActivityChanges = true | false
+
+
+Esse estado deve virar true se:
+
+SLA fixo mudar
+
+SLA por m² mudar
+
+Lista de materiais mudar
+
+Lista de ferramentas mudar
+
+6️⃣ BLOQUEIO DE SALVAMENTO
+Se hasActivityChanges === false
+
+Permitir:
+
+Salvar plano normalmente
+
+Usar atividade existente
+
+Se hasActivityChanges === true
+
+❌ Bloquear botão Salvar Plano
+
+Exibir aviso:
+
+Esta atividade foi modificada. Para continuar, é necessário salvá-la como uma nova atividade.
+
+7️⃣ MODAL OBRIGATÓRIO — “SALVAR COMO NOVA ATIVIDADE”
+
+Abrir automaticamente quando:
+
+Usuário tenta salvar plano com alterações estruturais
+
+Conteúdo mínimo:
+Salvar como nova atividade
+
+Nome da nova atividade * [input]
+
+[ Salvar atividade e continuar ]
+[ Cancelar ]
+
+Regras:
+
+Nome é obrigatório
+
+Nome não pode ser igual ao da atividade original
+
+Ao confirmar:
+
+Criar nova atividade no cadastro
+
+Copiar:
+
+SLA fixo
+
+SLA por m²
+
+Materiais
+
+Ferramentas
+
+Associar automaticamente a nova atividade ao plano
+
+Liberar botão “Salvar Plano”
+
+8️⃣ CÁLCULO DE TEMPO (MANTER FUNCIONAL)
+
+Recalcular automaticamente quando:
+
+SLA fixo muda
+
+SLA por m² muda
+
+Área muda
+
+Exibir:
+
+Área do local: XX m²
+Tempo estimado total: HH:mm
+
+
+(Opcional)
+
+Tempo = SLA fixo + (Área × SLA por m²)
+
+9️⃣ LIMPEZA DE UI (OBRIGATÓRIO)
+
+Remover do modal:
+
+Inputs duplicados de SLA
+
+Checkboxes/radios para materiais e ferramentas
+
+Qualquer campo técnico que não seja essencial
+
+Priorizar:
+
+Leitura clara
+
+Fluxo lógico
+
+Separação visual entre:
+
+Dados da atividade
+
+Dados do plano
+
+🔧 COMENTÁRIO OBRIGATÓRIO NO CÓDIGO
+
+Adicionar no componente do modal:
+
+// No planejamento, atividades existentes nunca são sobrescritas.
+// Qualquer alteração em SLA, materiais ou ferramentas
+// exige salvar como nova atividade.
+
+✅ RESULTADO ESPERADO
+
+Planejamento flexível
+
+Governança forte
+
+Zero risco de bagunçar cadastro
+
+UX simples e previsível
+
+Planejamento funciona como “fork” de atividade
