@@ -472,47 +472,44 @@ const Planning: React.FC = () => {
                             <SearchableSelect
                                 options={[{value: '', label: 'Todos os clientes'}, ...uniqueClients.map(cli => ({value: cli, label: cli}))]}
                                 value={filters.client}
-                                onChange={(val) => setFilters({...filters, client: val, location: '', subLocation: '', environment: ''})}
+                                onChange={(val) => setFilters({...filters, client: val})}
                                 placeholder="Todos os clientes"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos os locais'}, ...(!filters.client ? [] : commonAreas.filter(a => a.client === filters.client).reduce((acc, a) => {
+                                options={[{value: '', label: 'Todos os locais'}, ...commonAreas.reduce((acc, a) => {
                                     if (!acc.includes(a.location)) acc.push(a.location);
                                     return acc;
-                                }, [] as string[]).sort().map(loc => ({value: loc, label: loc})))]}
+                                }, [] as string[]).sort().map(loc => ({value: loc, label: loc}))]}
                                 value={filters.location}
-                                onChange={(val) => setFilters({...filters, location: val, subLocation: '', environment: ''})}
+                                onChange={(val) => setFilters({...filters, location: val})}
                                 placeholder="Todos os locais"
-                                disabled={!filters.client}
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos os sublocais'}, ...(!filters.location ? [] : commonAreas.filter(a => a.client === filters.client && a.location === filters.location).reduce((acc, a) => {
+                                options={[{value: '', label: 'Todos os sublocais'}, ...commonAreas.reduce((acc, a) => {
                                     if (!acc.includes(a.subLocation)) acc.push(a.subLocation);
                                     return acc;
-                                }, [] as string[]).sort().map(sub => ({value: sub, label: sub})))]}
+                                }, [] as string[]).sort().map(sub => ({value: sub, label: sub}))]}
                                 value={filters.subLocation}
-                                onChange={(val) => setFilters({...filters, subLocation: val, environment: ''})}
+                                onChange={(val) => setFilters({...filters, subLocation: val})}
                                 placeholder="Todos os sublocais"
-                                disabled={!filters.location}
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
                             <SearchableSelect
-                                options={[{value: '', label: 'Todos os ambientes'}, ...(!filters.subLocation ? [] : commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).reduce((acc, a) => {
+                                options={[{value: '', label: 'Todos os ambientes'}, ...commonAreas.reduce((acc, a) => {
                                     if (!acc.includes(a.environment)) acc.push(a.environment);
                                     return acc;
-                                }, [] as string[]).sort().map(env => ({value: env, label: env})))]}
+                                }, [] as string[]).sort().map(env => ({value: env, label: env}))]}
                                 value={filters.environment}
                                 onChange={(val) => setFilters({...filters, environment: val})}
                                 placeholder="Todos os ambientes"
-                                disabled={!filters.subLocation}
                             />
                         </div>
                     </div>

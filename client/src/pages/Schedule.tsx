@@ -331,7 +331,7 @@ const Schedule: React.FC = () => {
                             <SearchableSelect
                                 options={[{value: '', label: 'Todos os clientes'}, ...uniqueClients.map(c => ({value: c, label: c}))]}
                                 value={filters.client}
-                                onChange={(val) => setFilters({...filters, client: val, location: '', subLocation: '', environment: ''})}
+                                onChange={(val) => setFilters({...filters, client: val})}
                                 placeholder="Todos os clientes"
                             />
                         </div>
@@ -340,9 +340,8 @@ const Schedule: React.FC = () => {
                             <SearchableSelect
                                 options={[{value: '', label: 'Todos os locais'}, ...uniqueLocations.map(l => ({value: l, label: l}))]}
                                 value={filters.location}
-                                onChange={(val) => setFilters({...filters, location: val, subLocation: '', environment: ''})}
+                                onChange={(val) => setFilters({...filters, location: val})}
                                 placeholder="Todos os locais"
-                                disabled={!filters.client}
                             />
                         </div>
                         <div>
@@ -350,9 +349,8 @@ const Schedule: React.FC = () => {
                             <SearchableSelect
                                 options={[{value: '', label: 'Todos os sublocais'}, ...uniqueSubLocations.map(s => ({value: s, label: s}))]}
                                 value={filters.subLocation}
-                                onChange={(val) => setFilters({...filters, subLocation: val, environment: ''})}
+                                onChange={(val) => setFilters({...filters, subLocation: val})}
                                 placeholder="Todos os sublocais"
-                                disabled={!filters.location}
                             />
                         </div>
                         <div>
@@ -362,7 +360,6 @@ const Schedule: React.FC = () => {
                                 value={filters.environment}
                                 onChange={(val) => setFilters({...filters, environment: val})}
                                 placeholder="Todos os ambientes"
-                                disabled={!filters.subLocation}
                             />
                         </div>
                     </div>
