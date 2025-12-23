@@ -282,57 +282,54 @@ const filteredCommonAreas = useMemo(() => {
             className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}
         >
             <FilterIcon className="w-5 h-5 mr-2" />
-            {showFilters ? 'Ocultar Filtros' : 'Filtros e Pesquisa'}
+            {showFilters ? 'Ocultar Filtros' : 'Filtros Avançados'}
         </button>
       </div>
 
       {showFilters && (
           <div className="mb-6 p-6 bg-white rounded-lg shadow-md border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+              <h3 className="text-base font-semibold text-gray-900 mb-4">Filtros Avançados</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                   <div>
-                      <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-1">Pesquisa Global</label>
+                      <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                       <input
                           type="text"
                           id="search"
                           name="search"
                           value={filters.search}
                           onChange={handleFilterChange}
-                          placeholder="Termo livre..."
-                          className="block w-full px-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                          placeholder="Buscar por nome..."
+                          className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                       />
                   </div>
-
                   <div>
-                      <label htmlFor="client" className="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
-                      <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5">
-                          <option value="">Todos</option>
+                      <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                      <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2">
+                          <option value="">Todos os clientes</option>
                           {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
                       </select>
                   </div>
                   <div>
-                      <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-1">Local</label>
-                      <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
-                          <option value="">Todos</option>
+                      <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">Local</label>
+                      <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
+                          <option value="">Todos os locais</option>
                           {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                       </select>
                   </div>
                   <div>
-                      <label htmlFor="subLocation" className="block text-sm font-semibold text-gray-700 mb-1">Sublocal</label>
-                      <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
-                          <option value="">Todos</option>
+                      <label htmlFor="subLocation" className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
+                      <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
+                          <option value="">Todos os sublocais</option>
                           {uniqueSubLocations.map(sub => <option key={sub} value={sub}>{sub}</option>)}
                       </select>
                   </div>
                   <div>
-                      <label htmlFor="environment" className="block text-sm font-semibold text-gray-700 mb-1">Ambiente</label>
-                      <select name="environment" id="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
-                          <option value="">Todos</option>
+                      <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
+                      <select name="environment" id="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
+                          <option value="">Todos os ambientes</option>
                           {uniqueEnvironments.map(env => <option key={env} value={env}>{env}</option>)}
                       </select>
                   </div>
-              </div>
-              <div className="mt-6 flex justify-end">
-                  <button type="button" onClick={clearFilters} className="text-sm font-semibold text-primary-600 hover:text-primary-700 underline px-4 py-2">Limpar todos os filtros</button>
               </div>
           </div>
       )}

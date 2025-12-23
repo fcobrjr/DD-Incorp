@@ -456,27 +456,28 @@ const Planning: React.FC = () => {
             </PageHeader>
 
             <div className="mb-6 flex justify-end">
-                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}><FilterIcon className="w-5 h-5 mr-2" />{showFilters ? 'Ocultar Filtros' : 'Filtros e Pesquisa'}</button>
+                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}><FilterIcon className="w-5 h-5 mr-2" />{showFilters ? 'Ocultar Filtros' : 'Filtros Avançados'}</button>
             </div>
 
             {showFilters && (
                 <div className="mb-6 p-6 bg-white rounded-lg shadow-md border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <h3 className="text-base font-semibold text-gray-900 mb-4">Filtros Avançados</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Pesquisa</label>
-                            <input type="text" value={filters.search} onChange={handleFilterChange} name="search" placeholder="Termo livre..." className="block w-full px-3 py-1.5 border border-gray-300 rounded-md bg-white focus:ring-primary-500 sm:text-sm"/>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                            <input type="text" value={filters.search} onChange={handleFilterChange} name="search" placeholder="Buscar por nome..." className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-primary-500 sm:text-sm"/>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
-                            <select name="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5">
-                                <option value="">Todos</option>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                            <select name="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2">
+                                <option value="">Todos os clientes</option>
                                 {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Local</label>
-                            <select name="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
-                                <option value="">Todos</option>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
+                            <select name="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
+                                <option value="">Todos os locais</option>
                                 {!filters.client ? null : commonAreas.filter(a => a.client === filters.client).reduce((acc, a) => {
                                     if (!acc.includes(a.location)) acc.push(a.location);
                                     return acc;
@@ -484,9 +485,9 @@ const Planning: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Sublocal</label>
-                            <select name="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
-                                <option value="">Todos</option>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
+                            <select name="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
+                                <option value="">Todos os sublocais</option>
                                 {!filters.location ? null : commonAreas.filter(a => a.client === filters.client && a.location === filters.location).reduce((acc, a) => {
                                     if (!acc.includes(a.subLocation)) acc.push(a.subLocation);
                                     return acc;
@@ -494,9 +495,9 @@ const Planning: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1">Ambiente</label>
-                            <select name="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-1.5 disabled:bg-gray-50">
-                                <option value="">Todos</option>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
+                            <select name="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
+                                <option value="">Todos os ambientes</option>
                                 {!filters.subLocation ? null : commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).reduce((acc, a) => {
                                     if (!acc.includes(a.environment)) acc.push(a.environment);
                                     return acc;
@@ -504,8 +505,8 @@ const Planning: React.FC = () => {
                             </select>
                         </div>
                     </div>
-                    <div className="mt-6 flex justify-end">
-                        <button type="button" onClick={clearFilters} className="text-sm font-semibold text-primary-600 hover:text-primary-700 underline px-4 py-2">Limpar filtros</button>
+                    <div className="mt-4 flex justify-end">
+                        <button type="button" onClick={clearFilters} className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline">Limpar filtros</button>
                     </div>
                 </div>
             )}
