@@ -85,6 +85,9 @@ const Schedule: React.FC = () => {
         status: 'Todas' as Status | 'Todas',
         operator: '',
         client: '',
+        location: '',
+        subLocation: '',
+        environment: '',
     });
     const [showFilters, setShowFilters] = useLocalStorage('scheduleShowFilters', false);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -146,6 +149,9 @@ const Schedule: React.FC = () => {
             if (filters.search && !act.activityName.toLowerCase().includes(filters.search.toLowerCase())) return false;
             if (filters.status !== 'Todas' && act.status !== filters.status) return false;
             if (filters.client && act.client !== filters.client) return false;
+            if (filters.location && act.location !== filters.location) return false;
+            if (filters.subLocation && act.subLocation !== filters.subLocation) return false;
+            if (filters.environment && act.environment !== filters.environment) return false;
             if (viewMode === 'table') {
                 if (!act.plannedDate) return false;
                 if (filters.startDate && act.plannedDate < filters.startDate) return false;
@@ -154,6 +160,20 @@ const Schedule: React.FC = () => {
             return true;
         }).sort((a,b) => (a.plannedDate || '9999').localeCompare(b.plannedDate || '9999'));
     }, [allEnrichedActivities, filters, viewMode]);
+
+    const uniqueClients = useMemo(() => Array.from(new Set(allEnrichedActivities.map(a => a.client).filter(Boolean))).sort(), [allEnrichedActivities]);
+    const uniqueLocations = useMemo(() => {
+        if (!filters.client) return [];
+        return Array.from(new Set(allEnrichedActivities.filter(a => a.client === filters.client).map(a => a.location).filter(Boolean))).sort();
+    }, [allEnrichedActivities, filters.client]);
+    const uniqueSubLocations = useMemo(() => {
+        if (!filters.client || !filters.location) return [];
+        return Array.from(new Set(allEnrichedActivities.filter(a => a.client === filters.client && a.location === filters.location).map(a => a.subLocation).filter(Boolean))).sort();
+    }, [allEnrichedActivities, filters.client, filters.location]);
+    const uniqueEnvironments = useMemo(() => {
+        if (!filters.client || !filters.location || !filters.subLocation) return [];
+        return Array.from(new Set(allEnrichedActivities.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).map(a => a.environment).filter(Boolean))).sort();
+    }, [allEnrichedActivities, filters.client, filters.location, filters.subLocation]);
 
     const handlePrev = () => {
         const d = new Date(currentCalendarDate);
@@ -293,10 +313,38 @@ const Schedule: React.FC = () => {
             </div>
 
             {showFilters && (
-                <div className="mb-8 p-6 bg-white rounded-lg shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
+                <div className="mb-8 p-6 bg-white rounded-lg shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-5 gap-4 animate-in fade-in slide-in-from-top-2">
                     <div>
                         <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Busca</label>
-                        <input type="text" value={filters.search} onChange={e => setFilters({...filters, search: e.target.value})} placeholder="Termo..." className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500" />
+                        <input type="text" value={filters.search} onChange={e => setFilters({...filters, search: e.target.value})} placeholder="Atividade..." className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Cliente</label>
+                        <select value={filters.client} onChange={e => setFilters({...filters, client: e.target.value, location: '', subLocation: '', environment: ''})} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500">
+                            <option value="">Todos</option>
+                            {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Local</label>
+                        <select value={filters.location} onChange={e => setFilters({...filters, location: e.target.value, subLocation: '', environment: ''})} disabled={!filters.client} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500 disabled:bg-gray-50">
+                            <option value="">Todos</option>
+                            {uniqueLocations.map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Sublocal</label>
+                        <select value={filters.subLocation} onChange={e => setFilters({...filters, subLocation: e.target.value, environment: ''})} disabled={!filters.location} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500 disabled:bg-gray-50">
+                            <option value="">Todos</option>
+                            {uniqueSubLocations.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Ambiente</label>
+                        <select value={filters.environment} onChange={e => setFilters({...filters, environment: e.target.value})} disabled={!filters.subLocation} className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-primary-500 disabled:bg-gray-50">
+                            <option value="">Todos</option>
+                            {uniqueEnvironments.map(e => <option key={e} value={e}>{e}</option>)}
+                        </select>
                     </div>
                 </div>
             )}
@@ -334,7 +382,10 @@ const Schedule: React.FC = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
@@ -345,13 +396,16 @@ const Schedule: React.FC = () => {
                                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.activityName}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{item.client}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{item.location}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{item.subLocation}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{item.environment}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{formatDateDisplay(item.plannedDate || '')}</td>
                                     <td className="px-6 py-4"><span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_CONFIG[item.status].bg} ${STATUS_CONFIG[item.status].color} ${STATUS_CONFIG[item.status].border}`}>{item.status}</span></td>
                                     <td className="px-6 py-4 text-right"><button onClick={() => { setSelectedActivity(item); setIsPanelOpen(true); }} className="text-primary-600 p-2 hover:bg-primary-100 rounded-full transition-colors"><EyeIcon className="w-5 h-5"/></button></td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-10 text-gray-500">Nenhuma atividade agendada.</td>
+                                    <td colSpan={8} className="text-center py-10 text-gray-500">Nenhuma atividade agendada.</td>
                                 </tr>
                             )}
                         </tbody>

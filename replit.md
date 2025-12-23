@@ -35,6 +35,8 @@ client/                    # Frontend React application
       CommonAreas.tsx      # Common areas management
       Activities.tsx       # Activities management
       Team.tsx             # Team members management
+      Planning.tsx         # Work plan creation/editing
+      Schedule.tsx         # Activity scheduling
       ... (other pages)
     services/              # API service integrations
       geminiService.ts     # Gemini AI integration
@@ -118,7 +120,25 @@ Similar CRUD patterns for all entities.
 - Build command: `npm run build`
 - Run command: `NODE_ENV=production node dist/index.js`
 
+## Planning Modal (Plano de Trabalho)
+Governança obrigatória:
+- **Imutabilidade de atividades**: Atividades existentes nunca são sobrescritas no planejamento
+- **Fork de atividades**: Qualquer alteração em SLA, materiais ou ferramentas cria uma nova atividade
+- **Detecção de mudanças**: Sistema detecta automaticamente alterações estruturais
+- **Modal obrigatório**: Usuário deve salvar modificações como nova atividade antes de continuar
+- **Regras de validação**: Nome não pode ser igual ao original, cria automaticamente nova atividade no cadastro
+
+## Schedule (Agenda)
+- **Filtros de localização**: Cliente, Local, Sublocal, Ambiente (cascata com validação)
+- **Colunas de identificação**: Todas as tabelas mostram localização completa
+- **Visualizações**: Calendário (mês/semana/dia) e tabela
+- **Status de atividades**: Aguardando Programação, Não Iniciada, Em Execução, Concluída, Atrasada
+
 ## Recent Changes
+- 2025-12-23: Refatorado modal de Plano de Trabalho com governança de atividades e detecção de alterações
+- 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Schedule com colunas de localização
+- 2025-12-19: Implementado Planejamento com SLA calculado dinamicamente e busca de atividades
+- 2025-12-19: Estruturado Agendamento com visualizações de calendário e tabela
 - 2025-12-19: Restructured to match ToolTrackerPro2 sibling architecture
 - 2025-12-19: Added authentication with Passport.js
 - 2025-12-19: Migrated to wouter routing with protected routes
