@@ -572,8 +572,9 @@ const Planning: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span className={`text-xs font-bold rounded-full px-2 py-1 ${getPeriodicityStyle(item.periodicity).bg} ${getPeriodicityStyle(item.periodicity).text}`}>{item.periodicity}</span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end space-x-1">
                                             <button onClick={() => openModal(item.originalPlan)} className="text-primary-600 hover:bg-primary-50 p-2 rounded-full"><EditIcon className="w-5 h-5"/></button>
+                                            <button onClick={() => handleDelete(item.originalPlan.id)} className="text-red-600 hover:bg-red-50 p-2 rounded-full"><TrashIcon className="w-5 h-5"/></button>
                                         </td>
                                     </tr>
                                 )) : (
