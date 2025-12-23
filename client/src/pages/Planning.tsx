@@ -36,7 +36,6 @@ interface PlanActivityForm {
 interface WorkPlanForm {
     id: string;
     commonAreaId: string;
-    planName: string;
     periodicity: Periodicity;
     activities: PlanActivityForm[];
 }
@@ -170,7 +169,6 @@ const Planning: React.FC = () => {
             setFormState({
                 id: plan.id,
                 commonAreaId: plan.commonAreaId,
-                planName: `Plano - ${area?.environment || ''}`,
                 periodicity: plan.plannedActivities[0]?.periodicity || 'Diário',
                 activities: planActivities
             });
@@ -179,7 +177,6 @@ const Planning: React.FC = () => {
             setFormState({
                 id: `plan-${Date.now()}`,
                 commonAreaId: '',
-                planName: '',
                 periodicity: 'Diário',
                 activities: []
             });
@@ -210,8 +207,7 @@ const Planning: React.FC = () => {
 
         setFormState(prev => prev ? { 
             ...prev, 
-            commonAreaId: areaId,
-            planName: prev.planName || `Plano - ${area.environment}`
+            commonAreaId: areaId
         } : null);
         setLocationSearch(`${area.client} > ${area.location} > ${area.subLocation} > ${area.environment}`);
         setShowLocationDropdown(false);
@@ -323,10 +319,6 @@ const Planning: React.FC = () => {
         e.preventDefault();
         if (!formState || !formState.commonAreaId) {
             alert("Por favor, selecione uma Área Comum.");
-            return;
-        }
-        if (!formState.planName.trim()) {
-            alert("Por favor, informe o nome do plano.");
             return;
         }
         if (formState.activities.length === 0) {
@@ -659,29 +651,17 @@ const Planning: React.FC = () => {
 
                                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                     <h4 className="text-sm font-semibold text-gray-700 mb-3">Dados do Plano</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Plano *</label>
-                                            <input
-                                                type="text"
-                                                value={formState.planName}
-                                                onChange={(e) => setFormState(prev => prev ? { ...prev, planName: e.target.value } : null)}
-                                                placeholder="Ex: Limpeza semanal - Cobertura"
-                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Periodicidade *</label>
-                                            <select
-                                                value={formState.periodicity}
-                                                onChange={(e) => setFormState(prev => prev ? { ...prev, periodicity: e.target.value as Periodicity } : null)}
-                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                            >
-                                                {PERIODICITY_OPTIONS.map(p => (
-                                                    <option key={p} value={p}>{p}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Periodicidade *</label>
+                                        <select
+                                            value={formState.periodicity}
+                                            onChange={(e) => setFormState(prev => prev ? { ...prev, periodicity: e.target.value as Periodicity } : null)}
+                                            className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                        >
+                                            {PERIODICITY_OPTIONS.map(p => (
+                                                <option key={p} value={p}>{p}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
