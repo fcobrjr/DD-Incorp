@@ -2,6 +2,7 @@
 import React, { useState, useContext, useRef, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
+import SearchableSelect from '../components/SearchableSelect';
 import { CommonArea, Activity } from '@shared/types';
 import { EditIcon, TrashIcon, SparklesIcon, EyeIcon, DownloadIcon, UploadIcon, PlusIcon, FilterIcon } from '../components/icons';
 import { suggestActivitiesForEnvironment } from '../services/geminiService';
@@ -304,31 +305,42 @@ const filteredCommonAreas = useMemo(() => {
                   </div>
                   <div>
                       <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                      <select name="client" id="client" value={filters.client} onChange={handleFilterChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2">
-                          <option value="">Todos os clientes</option>
-                          {uniqueClients.map(cli => <option key={cli} value={cli}>{cli}</option>)}
-                      </select>
+                      <SearchableSelect
+                          options={[{value: '', label: 'Todos os clientes'}, ...uniqueClients.map(cli => ({value: cli, label: cli}))]}
+                          value={filters.client}
+                          onChange={(val) => setFilters({...filters, client: val, location: '', subLocation: '', environment: ''})}
+                          placeholder="Todos os clientes"
+                      />
                   </div>
                   <div>
                       <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">Local</label>
-                      <select name="location" id="location" value={filters.location} onChange={handleFilterChange} disabled={!filters.client} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
-                          <option value="">Todos os locais</option>
-                          {uniqueLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                      </select>
+                      <SearchableSelect
+                          options={[{value: '', label: 'Todos os locais'}, ...uniqueLocations.map(loc => ({value: loc, label: loc}))]}
+                          value={filters.location}
+                          onChange={(val) => setFilters({...filters, location: val, subLocation: '', environment: ''})}
+                          placeholder="Todos os locais"
+                          disabled={!filters.client}
+                      />
                   </div>
                   <div>
                       <label htmlFor="subLocation" className="block text-sm font-medium text-gray-700 mb-1">Sublocal</label>
-                      <select name="subLocation" id="subLocation" value={filters.subLocation} onChange={handleFilterChange} disabled={!filters.location} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
-                          <option value="">Todos os sublocais</option>
-                          {uniqueSubLocations.map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                      </select>
+                      <SearchableSelect
+                          options={[{value: '', label: 'Todos os sublocais'}, ...uniqueSubLocations.map(sub => ({value: sub, label: sub}))]}
+                          value={filters.subLocation}
+                          onChange={(val) => setFilters({...filters, subLocation: val, environment: ''})}
+                          placeholder="Todos os sublocais"
+                          disabled={!filters.location}
+                      />
                   </div>
                   <div>
                       <label htmlFor="environment" className="block text-sm font-medium text-gray-700 mb-1">Ambiente</label>
-                      <select name="environment" id="environment" value={filters.environment} onChange={handleFilterChange} disabled={!filters.subLocation} className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm py-2 disabled:bg-gray-50">
-                          <option value="">Todos os ambientes</option>
-                          {uniqueEnvironments.map(env => <option key={env} value={env}>{env}</option>)}
-                      </select>
+                      <SearchableSelect
+                          options={[{value: '', label: 'Todos os ambientes'}, ...uniqueEnvironments.map(env => ({value: env, label: env}))]}
+                          value={filters.environment}
+                          onChange={(val) => setFilters({...filters, environment: val})}
+                          placeholder="Todos os ambientes"
+                          disabled={!filters.subLocation}
+                      />
                   </div>
               </div>
           </div>
