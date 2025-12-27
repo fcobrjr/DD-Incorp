@@ -357,19 +357,20 @@ const filteredCommonAreas = useMemo(() => {
       )}
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Área m²</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredCommonAreas.length > 0 ? filteredCommonAreas.slice(0, pageSize).map(area => (
+        <div className="overflow-y-auto" style={{ maxHeight: `${pageSize === 10 ? '400px' : pageSize === 20 ? '800px' : '1200px'}` }}>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Área m²</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredCommonAreas.length > 0 ? filteredCommonAreas.map(area => (
               <tr key={area.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{area.client}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.location}</td>
@@ -390,15 +391,16 @@ const filteredCommonAreas = useMemo(() => {
                   </div>
                 </td>
               </tr>
-            )) : (
-                 <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-500">
-                        {commonAreas.length > 0 ? 'Nenhuma área encontrada com os critérios de pesquisa.' : 'Nenhuma área comum cadastrada.'}
-                    </td>
-                </tr>
-            )}
-          </tbody>
-        </table>
+              )) : (
+                   <tr>
+                      <td colSpan={6} className="text-center py-10 text-gray-500">
+                          {commonAreas.length > 0 ? 'Nenhuma área encontrada com os critérios de pesquisa.' : 'Nenhuma área comum cadastrada.'}
+                      </td>
+                  </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       
       {/* Edit/Create Modal */}
