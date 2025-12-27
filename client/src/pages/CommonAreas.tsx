@@ -37,6 +37,18 @@ const CommonAreas: React.FC = () => {
   });
   const [pageSize, setPageSize] = useState(15);
 
+  // Activity Modal states
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
+  const [activityFormState, setActivityFormState] = useState<Omit<Activity, 'id'>>({ 
+    name: '', 
+    description: '', 
+    sla: 0, 
+    slaCoefficient: 0,
+    tools: [], 
+    materials: [] 
+  });
+
 
   const openModal = (item: CommonArea | null = null) => {
     setCurrentItem(item);
@@ -81,11 +93,61 @@ const CommonAreas: React.FC = () => {
         name: suggestionName,
         description: `Atividade sugerida para ambiente: ${formState.environment}`,
         sla: 0,
+        slaCoefficient: 0,
         tools: [],
         materials: [],
     };
     setActivities(prev => [...prev, { ...newActivity, id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` }]);
     setSuggestions(prev => prev.filter(s => s !== suggestionName));
+  };
+
+  const openActivityModal = () => {
+    setCurrentActivity(null);
+    setActivityFormState({ name: '', description: '', sla: 0, slaCoefficient: 0, tools: [], materials: [] });
+    setIsActivityModalOpen(true);
+  };
+
+  const closeActivityModal = () => {
+    setIsActivityModalOpen(false);
+    setCurrentActivity(null);
+  };
+
+  const handleActivitySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentActivity) {
+      setActivities(prev => prev.map(a => a.id === currentActivity.id ? { ...activityFormState, id: currentActivity.id } : a));
+    } else {
+      const newAct = { ...activityFormState, id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}` };
+      setActivities(prev => [...prev, newAct]);
+      if (currentItem) {
+        const existingPlan = workPlans.find(wp => wp.commonAreaId === currentItem.id);
+        if (existingPlan) {
+          setWorkPlans(prev => prev.map(wp => 
+            wp.id === existingPlan.id 
+              ? { ...wp, plannedActivities: [...(wp.plannedActivities || []), { activityId: newAct.id, periodicity: 'Diária', id: `pa-${Date.now()}` }] }
+              : wp
+          ));
+        } else {
+          setWorkPlans(prev => [...prev, { 
+            id: `wp-${Date.now()}`, 
+            commonAreaId: currentItem.id, 
+            plannedActivities: [{ activityId: newAct.id, periodicity: 'Diária', id: `pa-${Date.now()}` }] 
+          }]);
+        }
+      }
+    }
+    closeActivityModal();
+  };
+
+  const handleDeletePlannedActivity = (plannedActivityId: string) => {
+    if (!currentItem) return;
+    if (window.confirm("Tem certeza que deseja remover esta atividade do planejamento?")) {
+      setWorkPlans(prev => prev.map(wp => 
+        wp.commonAreaId === currentItem.id 
+          ? { ...wp, plannedActivities: (wp.plannedActivities || []).filter(pa => pa.id !== plannedActivityId) }
+          : wp
+      ));
+    }
   };
 
 
@@ -513,6 +575,7 @@ const filteredCommonAreas = useMemo(() => {
                         <tr>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -520,10 +583,20 @@ const filteredCommonAreas = useMemo(() => {
                             <tr key={detail.id}>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{detail.activityName}</td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{detail.periodicity}</td>
+                                <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
+                                  <div className="flex justify-end items-center space-x-1">
+                                    <button type="button" onClick={() => handleDeletePlannedActivity(detail.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors" aria-label="Excluir atividade">
+                                      <TrashIcon className="w-4 h-4"/>
+                                    </button>
+                                    <button type="button" onClick={openActivityModal} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors" aria-label="Adicionar atividade">
+                                      <PlusIcon className="w-4 h-4"/>
+                                    </button>
+                                  </div>
+                                </td>
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={2} className="text-center py-6 text-gray-500">Nenhuma atividade planejada para esta área.</td>
+                                <td colSpan={3} className="text-center py-6 text-gray-500">Nenhuma atividade planejada para esta área.</td>
                             </tr>
                         )}
                     </tbody>
@@ -534,6 +607,41 @@ const filteredCommonAreas = useMemo(() => {
             <div className="mt-6 flex justify-end">
               <button type="button" onClick={closePreview} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">Fechar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Activity Modal */}
+      {isActivityModalOpen && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-6">Nova Atividade</h3>
+            <form onSubmit={handleActivitySubmit}>
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="act_name" className="block text-sm font-medium leading-6 text-gray-900">Nome</label>
+                  <input type="text" id="act_name" name="name" value={activityFormState.name} onChange={(e) => setActivityFormState(prev => ({ ...prev, name: e.target.value }))} placeholder="Ex: Limpeza de Pisos" className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required/>
+                </div>
+                <div>
+                  <label htmlFor="act_description" className="block text-sm font-medium leading-6 text-gray-900">Descrição</label>
+                  <textarea id="act_description" name="description" value={activityFormState.description} onChange={(e) => setActivityFormState(prev => ({ ...prev, description: e.target.value }))} placeholder="Descreva a atividade..." rows={3} className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="act_sla" className="block text-sm font-medium leading-6 text-gray-900">SLA Fixo (min)</label>
+                    <input type="number" id="act_sla" name="sla" value={activityFormState.sla} onChange={(e) => setActivityFormState(prev => ({ ...prev, sla: parseFloat(e.target.value) || 0 }))} placeholder="0" className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" min="0" step="0.1" />
+                  </div>
+                  <div>
+                    <label htmlFor="act_coefficient" className="block text-sm font-medium leading-6 text-gray-900">SLA por m² (min)</label>
+                    <input type="number" id="act_coefficient" name="slaCoefficient" value={activityFormState.slaCoefficient} onChange={(e) => setActivityFormState(prev => ({ ...prev, slaCoefficient: parseFloat(e.target.value) || 0 }))} placeholder="0" className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" min="0" step="0.1" />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4">
+                <button type="button" onClick={closeActivityModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">Cancelar</button>
+                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors">Salvar</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
