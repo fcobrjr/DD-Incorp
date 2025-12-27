@@ -130,6 +130,10 @@ Regras de atividades:
 - **Modal obrigatório**: Usuário deve salvar modificações estruturais como nova atividade antes de continuar
 - **Regras de validação**: Nome não pode ser igual ao original, cria automaticamente nova atividade no cadastro
 - **Atividades colapsáveis**: Atividades iniciam colapsadas mostrando nome, periodicidade e tempo estimado; expansíveis para edição completa
+- **Pop-ups informativos**: Ao editar qualquer campo de uma atividade, mostra pop-up: "Esta atividade foi alterada. Ao salvar, uma nova atividade será criada."
+- **Botão "Salvar atividade"**: Aparece ao lado do botão "Remover", somente após edição de atividade
+- **Salvamento contextual**: Botão "Salvar atividade" afeta exclusivamente a atividade modificada
+- **Sem mensagens inline**: Nenhuma mensagem informativa é exibida diretamente na interface - todas as comunicações são em pop-ups
 
 ## Planning (Planejamento) Table & Cards
 - **Filtros independentes**: Pesquisa, Cliente, Local, Sublocal, Ambiente, Linhas por página (15/30)

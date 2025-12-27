@@ -64,6 +64,7 @@ const Planning: React.FC = () => {
     const [saveActivityModalOpen, setSaveActivityModalOpen] = useState(false);
     const [activityToSave, setActivityToSave] = useState<PlanActivityForm | null>(null);
     const [newActivityName, setNewActivityName] = useState('');
+    const [editWarningShown, setEditWarningShown] = useState<Set<string>>(new Set());
 
     const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
     const [showFilters, setShowFilters] = useState(false);
@@ -195,6 +196,7 @@ const Planning: React.FC = () => {
         setFormState(null);
         setLocationSearch('');
         setActivitySearch('');
+        setEditWarningShown(new Set());
     };
 
     const handleLocationSelect = (areaId: string) => {
@@ -274,7 +276,23 @@ const Planning: React.FC = () => {
         } : null);
     };
 
+    const showEditWarning = (activityId: string) => {
+        if (!editWarningShown.has(activityId)) {
+            alert("Esta atividade foi alterada.\nAo salvar, uma nova atividade será criada.");
+            setEditWarningShown(prev => {
+                const newSet = new Set(prev);
+                newSet.add(activityId);
+                return newSet;
+            });
+        }
+    };
+
     const updateActivitySla = (activityFormId: string, field: 'fixed' | 'coefficient', value: number) => {
+        const activity = formState?.activities.find(a => a.id === activityFormId);
+        if (activity && !activity.hasChanges) {
+            showEditWarning(activityFormId);
+        }
+        
         setFormState(prev => prev ? {
             ...prev,
             activities: prev.activities.map(a => 
@@ -291,6 +309,11 @@ const Planning: React.FC = () => {
 
     const addResourceToActivity = (activityFormId: string, type: 'tools' | 'materials', resourceId: string) => {
         if (!resourceId) return;
+        
+        const activity = formState?.activities.find(a => a.id === activityFormId);
+        if (activity && !activity.hasChanges) {
+            showEditWarning(activityFormId);
+        }
         
         setFormState(prev => prev ? {
             ...prev,
@@ -309,6 +332,11 @@ const Planning: React.FC = () => {
     };
 
     const updateResourceQuantity = (activityFormId: string, type: 'tools' | 'materials', resourceId: string, quantity: number) => {
+        const activity = formState?.activities.find(a => a.id === activityFormId);
+        if (activity && !activity.hasChanges) {
+            showEditWarning(activityFormId);
+        }
+        
         setFormState(prev => prev ? {
             ...prev,
             activities: prev.activities.map(a => {
@@ -324,6 +352,11 @@ const Planning: React.FC = () => {
     };
 
     const removeResource = (activityFormId: string, type: 'tools' | 'materials', resourceId: string) => {
+        const activity = formState?.activities.find(a => a.id === activityFormId);
+        if (activity && !activity.hasChanges) {
+            showEditWarning(activityFormId);
+        }
+        
         setFormState(prev => prev ? {
             ...prev,
             activities: prev.activities.map(a => {
@@ -754,33 +787,31 @@ const Planning: React.FC = () => {
                                                                         {formatTime(act.slaFixed + (act.slaCoefficient * selectedArea.area))}
                                                                     </span>
                                                                 )}
-                                                                {act.hasChanges && (
-                                                                    <span className="text-xs text-amber-600 font-medium">Modificada</span>
-                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => { e.stopPropagation(); removeActivityFromPlan(act.id); }}
-                                                        className="text-red-500 hover:text-red-700 text-sm font-medium p-1"
-                                                    >
-                                                        Remover
-                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        {act.hasChanges && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); setActivityToSave(act); setSaveActivityModalOpen(true); }}
+                                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                                                            >
+                                                                Salvar atividade
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); removeActivityFromPlan(act.id); }}
+                                                            className="text-red-500 hover:text-red-700 text-sm font-medium p-1"
+                                                        >
+                                                            Remover
+                                                        </button>
+                                                    </div>
                                                 </div>
 
                                                 {act.isExpanded && (
                                                     <div className="p-4 border-t border-gray-100">
-                                                        {act.hasChanges && (
-                                                            <div className="mb-4 p-3 bg-amber-100 border border-amber-300 rounded-lg">
-                                                                <p className="text-sm text-amber-800 font-medium mb-1">
-                                                                    Esta atividade foi modificada
-                                                                </p>
-                                                                <p className="text-xs text-amber-700">
-                                                                    Ao salvar o plano, você poderá criar uma nova atividade com essas alterações, mantendo a original inalterada.
-                                                                </p>
-                                                            </div>
-                                                        )}
 
                                                         <div className="mb-4">
                                                             <label className="block text-sm font-medium text-gray-700 mb-1">Periodicidade *</label>
