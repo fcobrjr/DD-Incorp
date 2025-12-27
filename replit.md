@@ -135,6 +135,7 @@ Regras de atividades:
 - **Visualizações**: Cards (grid) e Tabela
 - **Funcionalidades**: Editar e deletar planos de trabalho
 - **Tabela com altura ajustável**: Header fixo (sticky), rolagem vertical com barra, fórmula: `pageSize × 55 + 40`
+- **Padrão de linhas**: `h-10`, `py-2` (idêntico a Áreas Comuns)
 
 ## Schedule (Agenda)
 - **Filtros em cascata**: Pesquisa, Cliente, Local, Sublocal, Ambiente (mesma lógica Planning)

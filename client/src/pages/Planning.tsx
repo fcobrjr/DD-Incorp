@@ -567,30 +567,32 @@ const Planning: React.FC = () => {
                         <div className="overflow-y-auto" style={{ maxHeight: `${pageSize * 55 + 40}px` }}>
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50 sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                    <tr className="h-10">
+                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
+                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
+                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
+                                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
+                                        <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                 {flattenedActivities.length > 0 ? flattenedActivities.map(item => (
-                                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.client}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.location}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.subLocation}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.environment}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.activityName}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <tr key={item.id} className="h-10 hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{item.client}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{item.location}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{item.subLocation}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{item.environment}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{item.activityName}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">
                                             <span className={`text-xs font-bold rounded-full px-2 py-1 ${getPeriodicityStyle(item.periodicity).bg} ${getPeriodicityStyle(item.periodicity).text}`}>{item.periodicity}</span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end space-x-1">
-                                            <button onClick={() => openModal(item.originalPlan)} className="text-primary-600 hover:bg-primary-50 p-2 rounded-full"><EditIcon className="w-5 h-5"/></button>
-                                            <button onClick={() => handleDelete(item.originalPlan.id)} className="text-red-600 hover:bg-red-50 p-2 rounded-full"><TrashIcon className="w-5 h-5"/></button>
+                                        <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
+                                            <div className="flex justify-end items-center space-x-1">
+                                                <button onClick={() => openModal(item.originalPlan)} className="p-2 rounded-full text-primary-600 hover:bg-primary-100 transition-colors"><EditIcon className="w-5 h-5"/></button>
+                                                <button onClick={() => handleDelete(item.originalPlan.id)} className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors"><TrashIcon className="w-5 h-5"/></button>
+                                            </div>
                                         </td>
                                     </tr>
                                 )) : (
