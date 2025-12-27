@@ -357,7 +357,7 @@ const filteredCommonAreas = useMemo(() => {
       )}
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-        <div className="overflow-y-auto" style={{ maxHeight: `${pageSize === 10 ? '550px' : pageSize === 20 ? '1100px' : '1650px'}` }}>
+        <div className="overflow-y-auto" style={{ maxHeight: `${pageSize * 57 + 44}px` }}>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
