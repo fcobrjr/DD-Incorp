@@ -323,22 +323,7 @@ const CommonAreas: React.FC = () => {
 
 const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFilters(prev => {
-        const newFilters = { ...prev, [name]: value };
-        if (name === 'client') {
-            newFilters.location = '';
-            newFilters.subLocation = '';
-            newFilters.environment = '';
-        }
-        if (name === 'location') {
-            newFilters.subLocation = '';
-            newFilters.environment = '';
-        }
-        if (name === 'subLocation') {
-            newFilters.environment = '';
-        }
-        return newFilters;
-    });
+    setFilters(prev => ({ ...prev, [name]: value }));
 };
 
 const clearFilters = () => {
@@ -349,25 +334,22 @@ const clearFilters = () => {
         subLocation: '',
         environment: '',
     });
-    setPageSize(10);
+    setPageSize(15);
 };
 
 const uniqueClients = useMemo(() => [...new Set(commonAreas.map(a => a.client).filter(Boolean))].sort(), [commonAreas]);
     
 const uniqueLocations = useMemo(() => {
-    if (!filters.client) return [];
-    return [...new Set(commonAreas.filter(a => a.client === filters.client).map(a => a.location).filter(Boolean))].sort();
-}, [commonAreas, filters.client]);
+    return [...new Set(commonAreas.map(a => a.location).filter(Boolean))].sort();
+}, [commonAreas]);
     
 const uniqueSubLocations = useMemo(() => {
-    if (!filters.client || !filters.location) return [];
-    return [...new Set(commonAreas.filter(a => a.client === filters.client && a.location === filters.location).map(a => a.subLocation).filter(Boolean))].sort();
-}, [commonAreas, filters.client, filters.location]);
+    return [...new Set(commonAreas.map(a => a.subLocation).filter(Boolean))].sort();
+}, [commonAreas]);
 
 const uniqueEnvironments = useMemo(() => {
-    if (!filters.client || !filters.location || !filters.subLocation) return [];
-    return [...new Set(commonAreas.filter(a => a.client === filters.client && a.location === filters.location && a.subLocation === filters.subLocation).map(a => a.environment).filter(Boolean))].sort();
-}, [commonAreas, filters.client, filters.location, filters.subLocation]);
+    return [...new Set(commonAreas.map(a => a.environment).filter(Boolean))].sort();
+}, [commonAreas]);
 
 
 const filteredCommonAreas = useMemo(() => {
