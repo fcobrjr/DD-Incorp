@@ -124,9 +124,12 @@ Similar CRUD patterns for all entities.
 Regras de atividades:
 - **Imutabilidade de atividades**: Atividades existentes nunca são sobrescritas no planejamento
 - **Fork de atividades**: Qualquer alteração em SLA, materiais ou ferramentas cria uma nova atividade
-- **Detecção de mudanças**: Sistema detecta automaticamente alterações estruturais
-- **Modal obrigatório**: Usuário deve salvar modificações como nova atividade antes de continuar
+- **Periodicidade individual**: Cada atividade tem sua própria periodicidade (não existe mais periodicidade global do plano)
+- **Detecção de mudanças**: Sistema detecta automaticamente alterações estruturais (SLA, equipamentos, materiais)
+- **Alteração de periodicidade**: Não bloqueia salvamento (periodicidade é configuração de agendamento, não estrutura)
+- **Modal obrigatório**: Usuário deve salvar modificações estruturais como nova atividade antes de continuar
 - **Regras de validação**: Nome não pode ser igual ao original, cria automaticamente nova atividade no cadastro
+- **Atividades colapsáveis**: Atividades iniciam colapsadas mostrando nome, periodicidade e tempo estimado; expansíveis para edição completa
 
 ## Planning (Planejamento) Table & Cards
 - **Filtros independentes**: Pesquisa, Cliente, Local, Sublocal, Ambiente, Linhas por página (15/30)

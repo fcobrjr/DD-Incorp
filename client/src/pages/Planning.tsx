@@ -262,7 +262,7 @@ const Planning: React.FC = () => {
         setFormState(prev => prev ? {
             ...prev,
             activities: prev.activities.map(a =>
-                a.id === activityFormId ? { ...a, periodicity, hasChanges: true } : a
+                a.id === activityFormId ? { ...a, periodicity } : a
             )
         } : null);
     };
