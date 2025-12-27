@@ -357,27 +357,27 @@ const filteredCommonAreas = useMemo(() => {
       )}
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-        <div className="overflow-y-auto" style={{ maxHeight: `${41 + pageSize * 53}px` }}>
+        <div className="overflow-y-auto" style={{ maxHeight: `${(pageSize + 1) * 40}px` }}>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Área m²</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+              <tr className="h-10">
+                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Área m²</th>
+                <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredCommonAreas.length > 0 ? filteredCommonAreas.map(area => (
-              <tr key={area.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{area.client}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.location}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.subLocation}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.environment}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{area.area}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <tr key={area.id} className="h-10 hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{area.client}</td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{area.location}</td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{area.subLocation}</td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{area.environment}</td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{area.area}</td>
+                <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end items-center space-x-1">
                     <button type="button" onClick={() => openPreview(area)} className="p-2 rounded-full text-blue-600 hover:bg-blue-100 transition-colors" aria-label={`Visualizar ${area.client}`}>
                       <EyeIcon className="w-5 h-5"/>
