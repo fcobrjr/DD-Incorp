@@ -157,8 +157,10 @@ Páginas com filtros:
 - **Team**: Nome, Setor, Status (Ativos/Inativos)
 
 ## Recent Changes
+- 2025-12-27: Adicionada coluna de "Ações" na tabela de Atividades Planejadas do modal de visualização de Áreas Comuns (deletar atividade e adicionar nova)
+- 2025-12-27: Modal de nova atividade no CommonAreas agora é idêntico ao da página Atividades (com Equipamentos, Materiais e InfoTooltip)
 - 2025-12-27: Adicionada barra de rolagem na tabela de Áreas Comuns com todos os dados visíveis e header fixo
-- 2025-12-27: Adicionado filtro "Linhas por página" (10, 20, 30) na seção de Filtros Avançados de Áreas Comuns
+- 2025-12-27: Adicionado filtro "Linhas por página" (15, 30) na seção de Filtros Avançados de Áreas Comuns
 - 2025-12-27: Removida toda a funcionalidade de Governança (páginas, rotas, API, menu, tipos)
 - 2025-12-27: Setores de equipe atualizados: A&B, Recepção, Manutenção, Áreas Comuns, Outros
 - 2025-12-23: Substituído filtros nativos por SearchableSelect com busca em CommonAreas, Planning e Schedule

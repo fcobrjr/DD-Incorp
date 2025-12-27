@@ -3,10 +3,11 @@ import React, { useState, useContext, useRef, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
 import SearchableSelect from '../components/SearchableSelect';
-import { CommonArea, Activity } from '@shared/types';
+import { CommonArea, Activity, CorrelatedResource } from '@shared/types';
 import { EditIcon, TrashIcon, SparklesIcon, EyeIcon, DownloadIcon, UploadIcon, PlusIcon } from '../components/icons';
 import { suggestActivitiesForEnvironment } from '../services/geminiService';
 import FilterToolbar from '../components/FilterToolbar';
+import InfoTooltip from '../components/InfoTooltip';
 
 declare var XLSX: any;
 
@@ -48,6 +49,8 @@ const CommonAreas: React.FC = () => {
     tools: [], 
     materials: [] 
   });
+
+  const { tools, materials } = useContext(AppContext)!;
 
 
   const openModal = (item: CommonArea | null = null) => {
@@ -148,6 +151,82 @@ const CommonAreas: React.FC = () => {
           : wp
       ));
     }
+  };
+
+  const addActivityResource = (type: 'tools' | 'materials', resourceId: string) => {
+    if (!resourceId || (activityFormState[type] || []).some(r => r.resourceId === resourceId)) return;
+    let quantity = 1;
+    if (type === 'materials') {
+      const material = materials.find(m => m.id === resourceId);
+      if (material?.coefficientM2 && material.coefficientM2 > 0) {
+        quantity = material.coefficientM2;
+      }
+    }
+    const newResource: CorrelatedResource = { resourceId, quantity };
+    setActivityFormState(prev => ({ ...prev, [type]: [...(prev[type] || []), newResource] }));
+  };
+
+  const updateActivityResourceQuantity = (type: 'tools' | 'materials', resourceId: string, quantity: number) => {
+    setActivityFormState(prev => ({
+      ...prev,
+      [type]: (prev[type] || []).map(r => r.resourceId === resourceId ? { ...r, quantity: quantity < 0 ? 0 : quantity } : r)
+    }));
+  };
+
+  const removeActivityResource = (type: 'tools' | 'materials', resourceId: string) => {
+    setActivityFormState(prev => ({
+      ...prev,
+      [type]: (prev[type] || []).filter(r => r.resourceId !== resourceId)
+    }));
+  };
+
+  const renderActivityResourceList = (type: 'tools' | 'materials') => {
+    const resourceList = type === 'tools' ? tools : materials;
+    const title = type === 'tools' ? 'Equipamentos' : 'Materiais';
+    const resourceOptions = resourceList.map(r => ({ value: r.id, label: `${r.name} (${r.unit})` }));
+    return (
+      <div>
+        <h4 className="text-lg font-medium leading-6 text-gray-900">{title}</h4>
+        <div className="mt-4">
+          <SearchableSelect 
+            options={resourceOptions}
+            value=""
+            onChange={(val) => addActivityResource(type, val)}
+            placeholder={`Adicionar ${title.toLowerCase()}...`}
+          />
+        </div>
+        <div className="mt-4 space-y-3 max-h-48 overflow-y-auto pr-2">
+          {(activityFormState[type] || []).length > 0 ? (activityFormState[type] || []).map(correlated => {
+            const resource = resourceList.find(r => r.id === correlated.resourceId);
+            if (!resource) return null;
+            const isCoefficient = type === 'materials' && resource.coefficientM2 && resource.coefficientM2 > 0;
+            return (
+              <div key={correlated.resourceId} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                <div>
+                  <span className="text-sm font-medium text-gray-800">{resource.name}</span>
+                  {isCoefficient && <span className="text-xs text-blue-600 block">Coeficiente / m²</span>}
+                </div>
+                <div className="flex items-center space-x-3">
+                  <input 
+                    type="number" 
+                    value={correlated.quantity}
+                    onChange={(e) => updateActivityResourceQuantity(type, correlated.resourceId, parseFloat(e.target.value))}
+                    className="block w-24 rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+                    min="0" step="0.001"
+                  />
+                  <span className="text-sm text-gray-500 min-w-[30px]">{resource.unit}</span>
+                  <button type="button" onClick={() => removeActivityResource(type, correlated.resourceId)} className="p-1 rounded-full text-red-500 hover:bg-red-100 transition-colors">
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            );
+          }) : (
+            <div className="text-center py-4 text-sm text-gray-500">Nenhum {title.toLowerCase()} adicionado.</div>
+          )}
+        </div>
+      </div>
+    );
   };
 
 
@@ -614,32 +693,52 @@ const filteredCommonAreas = useMemo(() => {
       {/* Activity Modal */}
       {isActivityModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm flex justify-center items-center z-50" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-2xl font-semibold text-gray-900 mb-6">Nova Atividade</h3>
             <form onSubmit={handleActivitySubmit}>
               <div className="space-y-6">
-                <div>
-                  <label htmlFor="act_name" className="block text-sm font-medium leading-6 text-gray-900">Nome</label>
-                  <input type="text" id="act_name" name="name" value={activityFormState.name} onChange={(e) => setActivityFormState(prev => ({ ...prev, name: e.target.value }))} placeholder="Ex: Limpeza de Pisos" className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required/>
-                </div>
-                <div>
-                  <label htmlFor="act_description" className="block text-sm font-medium leading-6 text-gray-900">Descrição</label>
-                  <textarea id="act_description" name="description" value={activityFormState.description} onChange={(e) => setActivityFormState(prev => ({ ...prev, description: e.target.value }))} placeholder="Descreva a atividade..." rows={3} className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="act_sla" className="block text-sm font-medium leading-6 text-gray-900">SLA Fixo (min)</label>
-                    <input type="number" id="act_sla" name="sla" value={activityFormState.sla} onChange={(e) => setActivityFormState(prev => ({ ...prev, sla: parseFloat(e.target.value) || 0 }))} placeholder="0" className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" min="0" step="0.1" />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="md:col-span-2">
+                    <label htmlFor="name" className="block text-sm font-medium leading-6 text-gray-900">Nome da Atividade</label>
+                    <div className="mt-2">
+                      <input type="text" name="name" id="name" value={activityFormState.name} onChange={(e) => setActivityFormState(prev => ({ ...prev, name: e.target.value }))} placeholder="Ex: Limpeza de Vidros" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                    </div>
                   </div>
                   <div>
-                    <label htmlFor="act_coefficient" className="block text-sm font-medium leading-6 text-gray-900">SLA por m² (min)</label>
-                    <input type="number" id="act_coefficient" name="slaCoefficient" value={activityFormState.slaCoefficient} onChange={(e) => setActivityFormState(prev => ({ ...prev, slaCoefficient: parseFloat(e.target.value) || 0 }))} placeholder="0" className="mt-2 block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" min="0" step="0.1" />
+                    <label htmlFor="sla" className="block text-sm font-medium leading-6 text-gray-900">
+                      SLA Fixo (min)
+                      <InfoTooltip text="Tempo para preparação inicial." />
+                    </label>
+                    <div className="mt-2">
+                      <input type="number" name="sla" id="sla" value={activityFormState.sla} onChange={(e) => setActivityFormState(prev => ({ ...prev, sla: parseFloat(e.target.value) || 0 }))} placeholder="Tempo base" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" required />
+                    </div>
                   </div>
+                  <div>
+                    <label htmlFor="slaCoefficient" className="block text-sm font-medium leading-6 text-gray-900">
+                      SLA por m²
+                      <InfoTooltip text="Minutos por metro quadrado." />
+                    </label>
+                    <div className="mt-2">
+                      <input type="number" name="slaCoefficient" id="slaCoefficient" step="0.001" value={activityFormState.slaCoefficient} onChange={(e) => setActivityFormState(prev => ({ ...prev, slaCoefficient: parseFloat(e.target.value) || 0 }))} placeholder="Ex: 0.5" className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium leading-6 text-gray-900">Descrição</label>
+                  <div className="mt-2">
+                    <textarea name="description" id="description" value={activityFormState.description} onChange={(e) => setActivityFormState(prev => ({ ...prev, description: e.target.value }))} placeholder="Detalhes sobre a atividade..." className="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6" rows={3}></textarea>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 pt-2">
+                  {renderActivityResourceList('tools')}
+                  {renderActivityResourceList('materials')}
                 </div>
               </div>
               <div className="mt-8 pt-6 border-t border-gray-200 flex items-center justify-end gap-x-4">
-                <button type="button" onClick={closeActivityModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">Cancelar</button>
-                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors">Salvar</button>
+                <button type="button" onClick={closeActivityModal} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancelar</button>
+                <button type="submit" className="rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Salvar</button>
               </div>
             </form>
           </div>
