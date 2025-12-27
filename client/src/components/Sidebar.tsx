@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon, MapIcon, SlidersIcon, BarChartIcon, LayoutGridIcon, MailIcon, ClipboardListIcon, LogOutIcon } from './icons';
+import { HomeIcon, ActivityIcon, ToolIcon, MaterialIcon, TeamIcon, PlanIcon, CalendarIcon, MenuIcon, MapIcon, ClipboardListIcon, LogOutIcon } from './icons';
 import { useAuth } from '../hooks/use-auth';
 
 const navigation = [
@@ -12,10 +12,6 @@ const navigation = [
   { name: 'Equipamentos', href: '/tools', icon: ToolIcon },
   { name: 'Materiais', href: '/materials', icon: MaterialIcon },
   { name: 'Equipes', href: '/team', icon: TeamIcon },
-  { name: 'Parâmetros Gov.', href: '/governance-parameters', icon: SlidersIcon },
-  { name: 'Planejamento Gov.', href: '/governance-planning', icon: BarChartIcon },
-  { name: 'Escala Gov.', href: '/governance-schedule', icon: LayoutGridIcon },
-  { name: 'Convocações', href: '/governance-convocations', icon: MailIcon },
   { name: 'Blueprint', href: '/blueprint', icon: MapIcon },
 ];
 

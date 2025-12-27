@@ -6,11 +6,10 @@ import { TeamMember, Sector, ContractType, WorkSchedule } from '@shared/types';
 import { EditIcon, TrashIcon, PlusIcon } from '../components/icons';
 import FilterToolbar from '../components/FilterToolbar';
 
-const SECTORS: Sector[] = ['Governança', 'A&B', 'Recepção', 'Manutenção', 'Áreas Comuns', 'Outros'];
+const SECTORS: Sector[] = ['A&B', 'Recepção', 'Manutenção', 'Áreas Comuns', 'Outros'];
 const CONTRACT_TYPES: ContractType[] = ['Efetivo', 'Intermitente'];
 
 const SECTOR_COLORS: { [key in Sector]: string } = {
-  'Governança': 'bg-purple-100 text-purple-800 border-purple-200',
   'A&B': 'bg-orange-100 text-orange-800 border-orange-200',
   'Recepção': 'bg-blue-100 text-blue-800 border-blue-200',
   'Manutenção': 'bg-gray-100 text-gray-800 border-gray-200',

@@ -89,53 +89,6 @@ const SYSTEM_MAP: SystemNode[] = [
             { id: 'modal-member', title: 'Modal: Membro', type: 'modal', description: 'Cadastro de nome e função do colaborador.' }
         ]
     },
-    {
-        id: 'governance-parameters',
-        title: 'Parâmetros Gov.',
-        type: 'page',
-        description: 'Configuração de regras operacionais, jurídicas e tempos médios.',
-        children: [
-            { id: 'form-times', title: 'Form: Tempos Médios', type: 'component', description: 'Configuração de tempos padrão para Vago Sujo e Estada.' },
-            { id: 'form-holidays', title: 'Form: Feriados', type: 'component', description: 'Regras de multiplicadores e permissões para feriados.' },
-            { id: 'form-intermittent', title: 'Form: Intermitentes', type: 'component', description: 'Regras jurídicas para contratos intermitentes.' },
-            { id: 'action-restore', title: 'Ação: Restaurar Padrões', type: 'action', description: 'Reseta todos os parâmetros para os valores iniciais do sistema.' }
-        ]
-    },
-    {
-        id: 'governance-planning',
-        title: 'Planejamento Gov.',
-        type: 'page',
-        description: 'Planejamento semanal de demanda para o setor de governança.',
-        children: [
-            { id: 'week-selector', title: 'Seletor de Semana', type: 'component', description: 'Lógica para selecionar e travar semanas (Seg-Dom).' },
-            { id: 'table-input', title: 'Tabela de Input', type: 'component', description: 'Entrada de Ocupação, Vago Sujo, Estada e Tipo de Dia.' },
-            { id: 'calc-engine', title: 'Motor de Cálculo', type: 'action', description: 'Cálculo de horas necessárias baseado nos parâmetros e inputs.' },
-            { id: 'table-results', title: 'Tabela de Resultados', type: 'component', description: 'Exibição de Minutos Totais, Horas e Camareiras necessárias.' }
-        ]
-    },
-    {
-        id: 'governance-schedule',
-        title: 'Escala Gov.',
-        type: 'page',
-        description: 'Geração automática e gestão visual da escala semanal.',
-        children: [
-            { id: 'engine-schedule', title: 'Motor de Sugestão', type: 'action', description: 'Algoritmo que distribui turnos baseados na demanda calculada e restrições da equipe.' },
-            { id: 'matrix-view', title: 'Grade de Horários', type: 'component', description: 'Matriz Colaborador x Dia para visualização e edição rápida de horários.' },
-            { id: 'indicators', title: 'Indicadores', type: 'component', description: 'Comparativo visual entre Planejado vs Realizado (Escalado) por dia.' }
-        ]
-    },
-    {
-        id: 'governance-convocations',
-        title: 'Convocações',
-        type: 'page',
-        description: 'Gestão jurídica de convites de trabalho para intermitentes.',
-        children: [
-             { id: 'validator-72h', title: 'Validador 72h', type: 'action', description: 'Bloqueia envio se data atual for muito próxima da jornada.' },
-             { id: 'list-pending', title: 'Lista Pendentes', type: 'component', description: 'Listagem de turnos da escala ainda não enviados.' },
-             { id: 'page-response', title: 'Pág: Resposta Colaborador', type: 'page', description: 'Tela externa (simulada) para aceite ou recusa com justificativa.' },
-             { id: 'history-status', title: 'Histórico', type: 'component', description: 'Rastreio de status: Pendente, Aceita, Recusada, Expirada.' }
-        ]
-    }
 ];
 
 const Blueprint: React.FC = () => {

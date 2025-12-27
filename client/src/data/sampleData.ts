@@ -1,5 +1,5 @@
 
-import { Resource, TeamMember, CommonArea, Activity, WorkPlan, ScheduledActivity, GovernanceParameters, GovernanceWeeklyPlan, Convocation } from '@shared/types';
+import { Resource, TeamMember, CommonArea, Activity, WorkPlan, ScheduledActivity } from '@shared/types';
 
 // --- BASE RESOURCES ---
 export const SAMPLE_TOOLS: Resource[] = [
@@ -27,24 +27,17 @@ export const SAMPLE_TEAM_MEMBERS: TeamMember[] = [
     workSchedule: '6x1',
     cbo: '5143-20',
     maxWeeklyHours: 44,
-    unavailableDays: ['Domingo']
   },
   { 
     id: 'team-2', 
     name: 'Maria Oliveira', 
-    role: 'Líder de Governança', 
-    sector: 'Governança',
+    role: 'Supervisora de Limpeza', 
+    sector: 'Áreas Comuns',
     isActive: true,
     contractType: 'Efetivo',
     workSchedule: '5x2',
     maxWeeklyHours: 44,
-    notes: 'Supervisora do turno da manhã',
-    cleaningSpeedVacantDirty: 20,
-    cleaningSpeedStay: 8,
-    historyWeeks: [
-        { week: '2024-05', hours: 44, predominantShift: 'Manhã' },
-        { week: '2024-06', hours: 44, predominantShift: 'Manhã' }
-    ]
+    notes: 'Supervisora do turno da manhã'
   },
   { 
     id: 'team-3', 
@@ -55,23 +48,18 @@ export const SAMPLE_TEAM_MEMBERS: TeamMember[] = [
     contractType: 'Intermitente',
     workSchedule: '12x36',
     maxWeeklyHours: 36,
-    lastFullOffWeek: '2024-04'
   },
   {
     id: 'team-4',
     name: 'Ana Souza', 
-    role: 'Camareira', 
-    sector: 'Governança',
+    role: 'Auxiliar de Limpeza', 
+    sector: 'Áreas Comuns',
     isActive: true,
     contractType: 'Intermitente',
     workSchedule: 'Flexível',
     cbo: '5133-15',
     maxWeeklyHours: 30,
-    cleaningSpeedVacantDirty: 25,
-    cleaningSpeedStay: 10,
-    operationalRestrictions: 'Não pode carregar peso excessivo (recomendação médica).',
-    unavailableDays: ['Terça-feira', 'Quinta-feira'],
-    lastFullOffWeek: '2024-06'
+    notes: 'Não pode carregar peso excessivo (recomendação médica).'
   }
 ];
 
@@ -201,42 +189,3 @@ export const SAMPLE_SCHEDULED_ACTIVITIES: ScheduledActivity[] = [
         operatorId: 'team-3',
     }
 ];
-
-// --- GOVERNANCE ---
-export const DEFAULT_GOVERNANCE_PARAMETERS: GovernanceParameters = {
-  // 1. Tempos
-  defaultCleaningSpeedVacantDirty: 25,
-  defaultCleaningSpeedStay: 10,
-
-  // 2. Feriados
-  holidayDemandMultiplier: 1.5,
-  holidayEveDemandMultiplier: 1.2,
-  allowIntermittentOnHolidays: true,
-  preferEffectiveOnHolidays: true,
-  holidayNotes: 'Priorizar efetivos no Natal e Ano Novo; Intermitentes no Carnaval.',
-
-  // 3. Intermitentes
-  intermittentMinWeeklyHours: 20,
-  intermittentMaxWeeklyHours: 44,
-  intermittentMaxConsecutiveDays: 3,
-  intermittentWeeksInterval: 1,
-  intermittentMandatoryOffWeeks: 4,
-
-  // 4. Alternância
-  maxShiftRepetitionPercentage: 50,
-  maxDayShiftRepetitionPercentage: 30,
-  alternationMode: 'Flexível',
-
-  // 5. Regime Operacional
-  totalApartments: 144, // Default 144 apartments
-  standardShiftDuration: 8,
-  efficiencyTarget: 85,
-  sundayRotationRatio: 2, // 1 domingo a cada 2 semanas (exemplo)
-
-  // 6. Campo Livre
-  customRules: 'Evitar escalar Maria e João no mesmo turno.\nPriorizar colaboradores com banco de horas negativo.',
-};
-
-export const SAMPLE_GOVERNANCE_WEEKLY_PLANS: GovernanceWeeklyPlan[] = [];
-
-export const SAMPLE_CONVOCATIONS: Convocation[] = [];

@@ -48,7 +48,7 @@ export const teamMembers = pgTable("team_members", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   role: text("role").notNull(),
-  sector: text("sector", { enum: ["Governança", "A&B", "Recepção", "Manutenção", "Áreas Comuns", "Outros"] }).notNull(),
+  sector: text("sector", { enum: ["A&B", "Recepção", "Manutenção", "Áreas Comuns", "Outros"] }).notNull(),
   isActive: boolean("is_active").notNull().default(true),
   contractType: text("contract_type", { enum: ["Efetivo", "Intermitente"] }),
   workSchedule: text("work_schedule", { enum: ["5x2", "6x1", "12x36", "Flexível", "Outro"] }),

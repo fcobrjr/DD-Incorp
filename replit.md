@@ -1,7 +1,7 @@
 # Common Area Planner
 
 ## Overview
-A React + TypeScript application for planning and managing common areas, activities, teams, governance, and scheduling. Built as a sibling project to ToolTrackerPro2, sharing the same architecture patterns:
+A React + TypeScript application for planning and managing common areas, activities, teams, and scheduling. Built as a sibling project to ToolTrackerPro2, sharing the same architecture patterns:
 
 - **Express backend** with Vite middleware integration
 - **PostgreSQL database** with Drizzle ORM
@@ -121,7 +121,7 @@ Similar CRUD patterns for all entities.
 - Run command: `NODE_ENV=production node dist/index.js`
 
 ## Planning Modal (Plano de Trabalho)
-Governança obrigatória:
+Regras de atividades:
 - **Imutabilidade de atividades**: Atividades existentes nunca são sobrescritas no planejamento
 - **Fork de atividades**: Qualquer alteração em SLA, materiais ou ferramentas cria uma nova atividade
 - **Detecção de mudanças**: Sistema detecta automaticamente alterações estruturais
@@ -157,12 +157,14 @@ Páginas com filtros:
 - **Team**: Nome, Setor, Status (Ativos/Inativos)
 
 ## Recent Changes
+- 2025-12-27: Removida toda a funcionalidade de Governança (páginas, rotas, API, menu, tipos)
+- 2025-12-27: Setores de equipe atualizados: A&B, Recepção, Manutenção, Áreas Comuns, Outros
 - 2025-12-23: Substituído filtros nativos por SearchableSelect com busca em CommonAreas, Planning e Schedule
 - 2025-12-23: Adicionado coluna "Ações" na tabela de Schedule com botões de visualizar e deletar
 - 2025-12-23: Aplicado padrão global "Filtros Avançados" em todas as páginas com filtros
 - 2025-12-23: Adicionado informações de cliente, local, sublocal e ambiente aos cards de Planning
 - 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Planning com colunas de localização
-- 2025-12-23: Refatorado modal de Plano de Trabalho com governança de atividades e detecção de alterações
+- 2025-12-23: Refatorado modal de Plano de Trabalho com detecção de alterações em atividades
 - 2025-12-23: Adicionado filtros cliente/local/sublocal/ambiente em Schedule com colunas de localização
 - 2025-12-19: Implementado Planejamento com SLA calculado dinamicamente e busca de atividades
 - 2025-12-19: Estruturado Agendamento com visualizações de calendário e tabela

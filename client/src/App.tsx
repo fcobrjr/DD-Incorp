@@ -14,11 +14,6 @@ import Team from "./pages/Team";
 import Planning from "./pages/Planning";
 import Schedule from "./pages/Schedule";
 import DailyWorkOrders from "./pages/DailyWorkOrders";
-import GovernanceParameters from "./pages/GovernanceParameters";
-import GovernancePlanning from "./pages/GovernancePlanning";
-import GovernanceSchedule from "./pages/GovernanceSchedule";
-import GovernanceConvocation from "./pages/GovernanceConvocation";
-import ConvocationResponse from "./pages/ConvocationResponse";
 import Blueprint from "./pages/Blueprint";
 
 function Router() {
@@ -32,11 +27,6 @@ function Router() {
       <ProtectedRoute path="/planning" component={() => <MainLayout><Planning /></MainLayout>} />
       <ProtectedRoute path="/schedule" component={() => <MainLayout><Schedule /></MainLayout>} />
       <ProtectedRoute path="/daily-work-orders" component={() => <MainLayout><DailyWorkOrders /></MainLayout>} />
-      <ProtectedRoute path="/governance-parameters" component={() => <MainLayout><GovernanceParameters /></MainLayout>} />
-      <ProtectedRoute path="/governance-planning" component={() => <MainLayout><GovernancePlanning /></MainLayout>} />
-      <ProtectedRoute path="/governance-schedule" component={() => <MainLayout><GovernanceSchedule /></MainLayout>} />
-      <ProtectedRoute path="/governance-convocations" component={() => <MainLayout><GovernanceConvocation /></MainLayout>} />
-      <ProtectedRoute path="/convocation-response/:id" component={() => <MainLayout><ConvocationResponse /></MainLayout>} />
       <ProtectedRoute path="/blueprint" component={() => <MainLayout><Blueprint /></MainLayout>} />
       <Route path="/auth" component={AuthPage} />
       <Route component={() => <div className="flex items-center justify-center h-screen">Pagina nao encontrada</div>} />

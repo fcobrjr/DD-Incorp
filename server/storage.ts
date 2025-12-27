@@ -1,18 +1,13 @@
 import {
   users, commonAreas, resources, activities, teamMembers,
-  workPlans, scheduledActivities, governanceParameters,
-  governanceWeeklyPlans, governanceSchedules, convocations,
+  workPlans, scheduledActivities,
   type User, type InsertUser,
   type CommonArea, type InsertCommonArea,
   type Resource, type InsertResource,
   type Activity, type InsertActivity,
   type TeamMember, type InsertTeamMember,
   type WorkPlan, type InsertWorkPlan,
-  type ScheduledActivity, type InsertScheduledActivity,
-  type GovernanceParameters, type InsertGovernanceParameters,
-  type GovernanceWeeklyPlan, type InsertGovernanceWeeklyPlan,
-  type GovernanceSchedule, type InsertGovernanceSchedule,
-  type Convocation, type InsertConvocation
+  type ScheduledActivity, type InsertScheduledActivity
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -66,26 +61,6 @@ export interface IStorage {
   createScheduledActivity(activity: InsertScheduledActivity): Promise<ScheduledActivity>;
   updateScheduledActivity(id: number, activity: Partial<InsertScheduledActivity>): Promise<ScheduledActivity>;
   deleteScheduledActivity(id: number): Promise<void>;
-
-  getGovernanceParameters(): Promise<GovernanceParameters | undefined>;
-  updateGovernanceParameters(params: Partial<InsertGovernanceParameters>): Promise<GovernanceParameters>;
-
-  getGovernanceWeeklyPlans(): Promise<GovernanceWeeklyPlan[]>;
-  getGovernanceWeeklyPlan(id: number): Promise<GovernanceWeeklyPlan | undefined>;
-  createGovernanceWeeklyPlan(plan: InsertGovernanceWeeklyPlan): Promise<GovernanceWeeklyPlan>;
-  updateGovernanceWeeklyPlan(id: number, plan: Partial<InsertGovernanceWeeklyPlan>): Promise<GovernanceWeeklyPlan>;
-  deleteGovernanceWeeklyPlan(id: number): Promise<void>;
-
-  getGovernanceSchedules(): Promise<GovernanceSchedule[]>;
-  getGovernanceSchedule(id: number): Promise<GovernanceSchedule | undefined>;
-  createGovernanceSchedule(schedule: InsertGovernanceSchedule): Promise<GovernanceSchedule>;
-  updateGovernanceSchedule(id: number, schedule: Partial<InsertGovernanceSchedule>): Promise<GovernanceSchedule>;
-  deleteGovernanceSchedule(id: number): Promise<void>;
-
-  getConvocations(): Promise<Convocation[]>;
-  getConvocation(id: number): Promise<Convocation | undefined>;
-  createConvocation(convocation: InsertConvocation): Promise<Convocation>;
-  updateConvocation(id: number, convocation: Partial<InsertConvocation>): Promise<Convocation>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -265,87 +240,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteScheduledActivity(id: number): Promise<void> {
     await db.delete(scheduledActivities).where(eq(scheduledActivities.id, id));
-  }
-
-  async getGovernanceParameters(): Promise<GovernanceParameters | undefined> {
-    const [params] = await db.select().from(governanceParameters).limit(1);
-    return params || undefined;
-  }
-
-  async updateGovernanceParameters(params: Partial<InsertGovernanceParameters>): Promise<GovernanceParameters> {
-    const existing = await this.getGovernanceParameters();
-    if (existing) {
-      const [updated] = await db.update(governanceParameters).set({ ...params, updatedAt: new Date() }).where(eq(governanceParameters.id, existing.id)).returning();
-      return updated;
-    } else {
-      const [created] = await db.insert(governanceParameters).values(params as InsertGovernanceParameters).returning();
-      return created;
-    }
-  }
-
-  async getGovernanceWeeklyPlans(): Promise<GovernanceWeeklyPlan[]> {
-    return await db.select().from(governanceWeeklyPlans).orderBy(desc(governanceWeeklyPlans.weekStartDate));
-  }
-
-  async getGovernanceWeeklyPlan(id: number): Promise<GovernanceWeeklyPlan | undefined> {
-    const [plan] = await db.select().from(governanceWeeklyPlans).where(eq(governanceWeeklyPlans.id, id));
-    return plan || undefined;
-  }
-
-  async createGovernanceWeeklyPlan(plan: InsertGovernanceWeeklyPlan): Promise<GovernanceWeeklyPlan> {
-    const [newPlan] = await db.insert(governanceWeeklyPlans).values(plan).returning();
-    return newPlan;
-  }
-
-  async updateGovernanceWeeklyPlan(id: number, plan: Partial<InsertGovernanceWeeklyPlan>): Promise<GovernanceWeeklyPlan> {
-    const [updated] = await db.update(governanceWeeklyPlans).set({ ...plan, updatedAt: new Date() }).where(eq(governanceWeeklyPlans.id, id)).returning();
-    return updated;
-  }
-
-  async deleteGovernanceWeeklyPlan(id: number): Promise<void> {
-    await db.delete(governanceWeeklyPlans).where(eq(governanceWeeklyPlans.id, id));
-  }
-
-  async getGovernanceSchedules(): Promise<GovernanceSchedule[]> {
-    return await db.select().from(governanceSchedules).orderBy(desc(governanceSchedules.weekStartDate));
-  }
-
-  async getGovernanceSchedule(id: number): Promise<GovernanceSchedule | undefined> {
-    const [schedule] = await db.select().from(governanceSchedules).where(eq(governanceSchedules.id, id));
-    return schedule || undefined;
-  }
-
-  async createGovernanceSchedule(schedule: InsertGovernanceSchedule): Promise<GovernanceSchedule> {
-    const [newSchedule] = await db.insert(governanceSchedules).values(schedule).returning();
-    return newSchedule;
-  }
-
-  async updateGovernanceSchedule(id: number, schedule: Partial<InsertGovernanceSchedule>): Promise<GovernanceSchedule> {
-    const [updated] = await db.update(governanceSchedules).set({ ...schedule, updatedAt: new Date() }).where(eq(governanceSchedules.id, id)).returning();
-    return updated;
-  }
-
-  async deleteGovernanceSchedule(id: number): Promise<void> {
-    await db.delete(governanceSchedules).where(eq(governanceSchedules.id, id));
-  }
-
-  async getConvocations(): Promise<Convocation[]> {
-    return await db.select().from(convocations).orderBy(desc(convocations.sentAt));
-  }
-
-  async getConvocation(id: number): Promise<Convocation | undefined> {
-    const [convocation] = await db.select().from(convocations).where(eq(convocations.id, id));
-    return convocation || undefined;
-  }
-
-  async createConvocation(convocation: InsertConvocation): Promise<Convocation> {
-    const [newConvocation] = await db.insert(convocations).values(convocation).returning();
-    return newConvocation;
-  }
-
-  async updateConvocation(id: number, convocation: Partial<InsertConvocation>): Promise<Convocation> {
-    const [updated] = await db.update(convocations).set(convocation).where(eq(convocations.id, id)).returning();
-    return updated;
   }
 }
 
