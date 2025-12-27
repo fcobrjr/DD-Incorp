@@ -3,9 +3,10 @@ import React, { useState, useContext, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
 import { ScheduledActivity, Periodicity, Resource, PlannedActivity } from '@shared/types';
-import { CalendarIcon, ListIcon, EyeIcon, FilterIcon, ClockIcon, CheckCircleIcon, AlertTriangleIcon, TrashIcon } from '../components/icons';
+import { CalendarIcon, ListIcon, EyeIcon, ClockIcon, CheckCircleIcon, AlertTriangleIcon, TrashIcon } from '../components/icons';
 import useLocalStorage from '../hooks/useLocalStorage';
 import SearchableSelect from '../components/SearchableSelect';
+import FilterToolbar from '../components/FilterToolbar';
 
 type Status = 'Aguardando Programação' | 'Não Iniciada' | 'Em Execução' | 'Concluída' | 'Atrasada';
 
@@ -315,7 +316,11 @@ const Schedule: React.FC = () => {
             </PageHeader>
             
             <div className="mb-6 flex justify-end">
-                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}><FilterIcon className="w-5 h-5 mr-2" />{showFilters ? 'Ocultar Filtros' : 'Filtros Avançados'}</button>
+                <FilterToolbar
+                    showFilters={showFilters}
+                    onToggleFilters={() => setShowFilters(!showFilters)}
+                    onClearFilters={() => setFilters({ search: '', startDate: formatDateISO(new Date()), endDate: formatDateISO(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), status: 'Todas', operator: '', client: '', location: '', subLocation: '', environment: '' })}
+                />
             </div>
 
             {showFilters && (

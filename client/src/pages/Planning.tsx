@@ -1,9 +1,10 @@
 import React, { useState, useContext, useMemo } from 'react';
 import { AppContext } from '../context/AppContext';
 import { WorkPlan, PlannedActivity, Periodicity, Activity, CorrelatedResource } from '@shared/types';
-import { TrashIcon, EditIcon, PlusIcon, LayoutGridIcon, ListIcon, FilterIcon } from '../components/icons';
+import { TrashIcon, EditIcon, PlusIcon, LayoutGridIcon, ListIcon } from '../components/icons';
 import PageHeader from '../components/PageHeader';
 import SearchableSelect from '../components/SearchableSelect';
+import FilterToolbar from '../components/FilterToolbar';
 
 // No planejamento, atividades existentes nunca são sobrescritas.
 // Qualquer alteração em SLA, materiais ou ferramentas
@@ -448,7 +449,11 @@ const Planning: React.FC = () => {
             </PageHeader>
 
             <div className="mb-6 flex justify-end">
-                <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}><FilterIcon className="w-5 h-5 mr-2" />{showFilters ? 'Ocultar Filtros' : 'Filtros Avançados'}</button>
+                <FilterToolbar
+                    showFilters={showFilters}
+                    onToggleFilters={() => setShowFilters(!showFilters)}
+                    onClearFilters={clearFilters}
+                />
             </div>
 
             {showFilters && (
@@ -504,9 +509,6 @@ const Planning: React.FC = () => {
                                 placeholder="Todos"
                             />
                         </div>
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                        <button type="button" onClick={clearFilters} className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline">Limpar filtros</button>
                     </div>
                 </div>
             )}

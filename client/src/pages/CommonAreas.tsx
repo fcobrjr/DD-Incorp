@@ -4,8 +4,9 @@ import { AppContext } from '../context/AppContext';
 import PageHeader from '../components/PageHeader';
 import SearchableSelect from '../components/SearchableSelect';
 import { CommonArea, Activity } from '@shared/types';
-import { EditIcon, TrashIcon, SparklesIcon, EyeIcon, DownloadIcon, UploadIcon, PlusIcon, FilterIcon } from '../components/icons';
+import { EditIcon, TrashIcon, SparklesIcon, EyeIcon, DownloadIcon, UploadIcon, PlusIcon } from '../components/icons';
 import { suggestActivitiesForEnvironment } from '../services/geminiService';
+import FilterToolbar from '../components/FilterToolbar';
 
 declare var XLSX: any;
 
@@ -277,14 +278,11 @@ const filteredCommonAreas = useMemo(() => {
       </PageHeader>
       
       <div className="mb-6 flex justify-end">
-        <button
-            type="button"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-200 shadow-sm ${showFilters ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-gray-600 border-gray-200 hover:text-primary-600'}`}
-        >
-            <FilterIcon className="w-5 h-5 mr-2" />
-            {showFilters ? 'Ocultar Filtros' : 'Filtros Avançados'}
-        </button>
+        <FilterToolbar
+            showFilters={showFilters}
+            onToggleFilters={() => setShowFilters(!showFilters)}
+            onClearFilters={() => setFilters({ search: '', client: '', location: '', subLocation: '', environment: '' })}
+        />
       </div>
 
       {showFilters && (

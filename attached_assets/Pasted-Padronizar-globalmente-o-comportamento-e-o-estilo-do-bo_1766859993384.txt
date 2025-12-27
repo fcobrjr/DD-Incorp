@@ -1,0 +1,138 @@
+Padronizar globalmente o comportamento e o estilo do botão “Limpar filtros” em todas as telas do sistema que utilizem Filtros Avançados, garantindo consistência visual, funcional e de experiência do usuário.
+
+Essa regra se aplica, obrigatoriamente, a todas as páginas atuais e futuras que possuam filtros.
+
+🧩 Escopo obrigatório
+
+Aplicar este padrão em todas as telas que possuam filtros, incluindo (mas não limitado a):
+
+Planejamento
+
+Agenda / Escala
+
+Atividades
+
+Ferramentas
+
+Materiais
+
+Equipe
+
+Ambientes / Áreas
+
+Qualquer outra tela com bloco de filtros
+
+⚠️ Nenhuma tela pode ter exceção visual ou comportamental
+
+🎨 Regras de UI / Design (obrigatórias)
+
+Botão “Limpar filtros” deve existir sempre
+
+Mesmo quando nenhum filtro estiver aplicado
+
+Nunca ocultar, desabilitar ou remover o botão
+
+Padronização visual absoluta
+
+O botão “Limpar filtros” deve utilizar EXATAMENTE o mesmo componente base do botão “Ocultar filtros”
+
+Deve compartilhar:
+
+altura
+
+largura mínima
+
+tipografia
+
+borda
+
+raio
+
+cores (primary / azul)
+
+ícone (outline)
+
+estados hover, focus e active
+
+Hierarquia visual
+
+“Ocultar filtros” e “Limpar filtros” devem ter peso visual idêntico
+
+Devem parecer ações irmãs
+
+❌ Não usar estilo de link
+
+❌ Não usar botão secundário, cinza ou texto simples
+
+Posicionamento consistente
+
+Dentro do container/card de Filtros Avançados
+
+Alinhado à direita
+
+No mesmo eixo visual dos demais controles de filtro
+
+Nunca isolado no rodapé do card
+
+⚙️ Comportamento funcional (global)
+
+Ao clicar em “Limpar filtros”, o sistema deve:
+
+Resetar todos os filtros da tela atual para seus valores padrão
+
+Campos de texto → vazio
+
+Selects → “Todos”
+
+Checkboxes → desmarcados
+
+Datas → null / padrão
+
+Atualizar imediatamente a listagem ou resultado
+
+Não recarregar a página
+
+Não alterar estado de outros componentes fora da tela atual
+
+🧠 Regra técnica obrigatória (arquitetura)
+
+Criar um componente reutilizável global de controle de filtros
+Exemplo conceitual:
+
+FilterActions
+
+FilterHeader
+
+FilterToolbar
+
+Esse componente deve conter:
+
+Botão Ocultar filtros
+
+Botão Limpar filtros
+
+❌ Não duplicar estilos, classes ou lógica por tela
+
+✅ Todas as telas devem importar e reutilizar esse mesmo componente
+
+❌ Não permitido em nenhuma tela
+
+Botão “Limpar filtros” como link azul simples
+
+Botão com tamanho ou cor diferente
+
+Botão escondido quando não há filtros ativos
+
+Implementações específicas por página
+
+Divergência visual entre telas
+
+✅ Resultado esperado
+
+Experiência consistente em todo o sistema
+
+Padrão visual claro e profissional
+
+Usuário aprende uma vez e reconhece em todas as telas
+
+Código mais limpo, reutilizável e escalável
