@@ -32,12 +32,13 @@ interface PlanActivityForm {
     tools: CorrelatedResource[];
     materials: CorrelatedResource[];
     hasChanges: boolean;
+    periodicity: Periodicity;
+    isExpanded: boolean;
 }
 
 interface WorkPlanForm {
     id: string;
     commonAreaId: string;
-    periodicity: Periodicity;
     activities: PlanActivityForm[];
 }
 
@@ -165,13 +166,14 @@ const Planning: React.FC = () => {
                     slaCoefficient: act?.slaCoefficient || 0,
                     tools: act?.tools || [],
                     materials: act?.materials || [],
-                    hasChanges: false
+                    hasChanges: false,
+                    periodicity: pa.periodicity || 'Diário',
+                    isExpanded: false
                 };
             });
             setFormState({
                 id: plan.id,
                 commonAreaId: plan.commonAreaId,
-                periodicity: plan.plannedActivities[0]?.periodicity || 'Diário',
                 activities: planActivities
             });
             setLocationSearch(area ? `${area.client} > ${area.location} > ${area.subLocation} > ${area.environment}` : '');
@@ -179,7 +181,6 @@ const Planning: React.FC = () => {
             setFormState({
                 id: `plan-${Date.now()}`,
                 commonAreaId: '',
-                periodicity: 'Diário',
                 activities: []
             });
             setLocationSearch('');
@@ -235,7 +236,9 @@ const Planning: React.FC = () => {
             slaCoefficient: activity.slaCoefficient || 0,
             tools: activity.tools || [],
             materials: activity.materials || [],
-            hasChanges: false
+            hasChanges: false,
+            periodicity: 'Diário',
+            isExpanded: true
         };
 
         setFormState(prev => prev ? {
@@ -244,6 +247,24 @@ const Planning: React.FC = () => {
         } : null);
         setActivitySearch('');
         setShowActivityDropdown(false);
+    };
+
+    const toggleActivityExpansion = (activityFormId: string) => {
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.map(a =>
+                a.id === activityFormId ? { ...a, isExpanded: !a.isExpanded } : a
+            )
+        } : null);
+    };
+
+    const updateActivityPeriodicity = (activityFormId: string, periodicity: Periodicity) => {
+        setFormState(prev => prev ? {
+            ...prev,
+            activities: prev.activities.map(a =>
+                a.id === activityFormId ? { ...a, periodicity, hasChanges: true } : a
+            )
+        } : null);
     };
 
     const removeActivityFromPlan = (activityFormId: string) => {
@@ -342,7 +363,7 @@ const Planning: React.FC = () => {
         const plannedActivities: PlannedActivity[] = formState.activities.map(act => ({
             id: act.id,
             activityId: act.activityId,
-            periodicity: formState.periodicity
+            periodicity: act.periodicity
         }));
 
         const workPlan: WorkPlan = {
@@ -669,22 +690,6 @@ const Planning: React.FC = () => {
                                 </div>
 
                                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Dados do Plano</h4>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Periodicidade *</label>
-                                        <select
-                                            value={formState.periodicity}
-                                            onChange={(e) => setFormState(prev => prev ? { ...prev, periodicity: e.target.value as Periodicity } : null)}
-                                            className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                        >
-                                            {PERIODICITY_OPTIONS.map(p => (
-                                                <option key={p} value={p}>{p}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                     <h4 className="text-sm font-semibold text-gray-700 mb-3">Atividades do Plano</h4>
                                     <div className="relative mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Adicionar Atividade *</label>
@@ -722,125 +727,175 @@ const Planning: React.FC = () => {
                                         )}
                                     </div>
 
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                         {formState.activities.map(act => (
-                                            <div key={act.id} className={`rounded-lg border p-4 shadow-sm ${act.hasChanges ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}>
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <h5 className="font-semibold text-gray-900">Atividade: {act.activityName}</h5>
+                                            <div key={act.id} className={`rounded-lg border shadow-sm overflow-hidden ${act.hasChanges ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}>
+                                                <div 
+                                                    className="flex justify-between items-center p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                                                    onClick={() => toggleActivityExpansion(act.id)}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <svg 
+                                                            className={`w-4 h-4 text-gray-500 transition-transform ${act.isExpanded ? 'rotate-90' : ''}`} 
+                                                            fill="none" 
+                                                            stroke="currentColor" 
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                        <div>
+                                                            <h5 className="font-semibold text-gray-900">{act.activityName}</h5>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${getPeriodicityStyle(act.periodicity).bg} ${getPeriodicityStyle(act.periodicity).text}`}>
+                                                                    {act.periodicity}
+                                                                </span>
+                                                                {selectedArea && (
+                                                                    <span className="text-xs text-gray-500">
+                                                                        {formatTime(act.slaFixed + (act.slaCoefficient * selectedArea.area))}
+                                                                    </span>
+                                                                )}
+                                                                {act.hasChanges && (
+                                                                    <span className="text-xs text-amber-600 font-medium">Modificada</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                     <button
                                                         type="button"
-                                                        onClick={() => removeActivityFromPlan(act.id)}
-                                                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                                        onClick={(e) => { e.stopPropagation(); removeActivityFromPlan(act.id); }}
+                                                        className="text-red-500 hover:text-red-700 text-sm font-medium p-1"
                                                     >
                                                         Remover
                                                     </button>
                                                 </div>
 
-                                                {act.hasChanges && (
-                                                    <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded text-sm text-amber-800">
-                                                        <strong>Alteração detectada:</strong> Esta atividade foi modificada e será salva como uma nova atividade.
-                                                    </div>
-                                                )}
+                                                {act.isExpanded && (
+                                                    <div className="p-4 border-t border-gray-100">
+                                                        {act.hasChanges && (
+                                                            <div className="mb-4 p-3 bg-amber-100 border border-amber-300 rounded-lg">
+                                                                <p className="text-sm text-amber-800 font-medium mb-1">
+                                                                    Esta atividade foi modificada
+                                                                </p>
+                                                                <p className="text-xs text-amber-700">
+                                                                    Ao salvar o plano, você poderá criar uma nova atividade com essas alterações, mantendo a original inalterada.
+                                                                </p>
+                                                            </div>
+                                                        )}
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">SLA fixo (min)</label>
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            step="1"
-                                                            value={act.slaFixed}
-                                                            onChange={(e) => updateActivitySla(act.id, 'fixed', parseFloat(e.target.value) || 0)}
-                                                            className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">SLA por m² (min/m²)</label>
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            step="0.1"
-                                                            value={act.slaCoefficient}
-                                                            onChange={(e) => updateActivitySla(act.id, 'coefficient', parseFloat(e.target.value) || 0)}
-                                                            className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                                        />
-                                                    </div>
-                                                </div>
+                                                        <div className="mb-4">
+                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Periodicidade *</label>
+                                                            <select
+                                                                value={act.periodicity}
+                                                                onChange={(e) => updateActivityPeriodicity(act.id, e.target.value as Periodicity)}
+                                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                            >
+                                                                {PERIODICITY_OPTIONS.map(p => (
+                                                                    <option key={p} value={p}>{p}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
 
-                                                {selectedArea && (
-                                                    <div className="mb-4 p-3 bg-blue-50 rounded text-sm text-blue-800">
-                                                        <p>Área do local: <strong>{selectedArea.area} m²</strong></p>
-                                                        <p>Tempo estimado: <strong>{formatTime(act.slaFixed + (act.slaCoefficient * selectedArea.area))}</strong></p>
-                                                    </div>
-                                                )}
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-700 mb-1">SLA fixo (min)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="1"
+                                                                    value={act.slaFixed}
+                                                                    onChange={(e) => updateActivitySla(act.id, 'fixed', parseFloat(e.target.value) || 0)}
+                                                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-700 mb-1">SLA por m² (min/m²)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="0.1"
+                                                                    value={act.slaCoefficient}
+                                                                    onChange={(e) => updateActivitySla(act.id, 'coefficient', parseFloat(e.target.value) || 0)}
+                                                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                                />
+                                                            </div>
+                                                        </div>
 
-                                                <div className="space-y-3">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Equipamentos</label>
-                                                        <SearchableSelect
-                                                            options={tools.map(t => ({ value: t.id, label: t.name }))}
-                                                            value=""
-                                                            onChange={(val) => addResourceToActivity(act.id, 'tools', val)}
-                                                            placeholder="Adicionar equipamento..."
-                                                        />
-                                                        <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                                                            {act.tools.map(tool => {
-                                                                const toolObj = tools.find(t => t.id === tool.resourceId);
-                                                                if (!toolObj) return null;
-                                                                return (
-                                                                    <div key={tool.resourceId} className="flex items-center justify-between bg-gray-100 p-2 rounded text-sm">
-                                                                        <span>{toolObj.name}</span>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => removeResource(act.id, 'tools', tool.resourceId)}
-                                                                            className="text-red-500 hover:text-red-700"
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                        {selectedArea && (
+                                                            <div className="mb-4 p-3 bg-blue-50 rounded text-sm text-blue-800">
+                                                                <p>Área do local: <strong>{selectedArea.area} m²</strong></p>
+                                                                <p>Tempo estimado: <strong>{formatTime(act.slaFixed + (act.slaCoefficient * selectedArea.area))}</strong></p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-700 mb-2">Equipamentos</label>
+                                                                <SearchableSelect
+                                                                    options={tools.map(t => ({ value: t.id, label: t.name }))}
+                                                                    value=""
+                                                                    onChange={(val) => addResourceToActivity(act.id, 'tools', val)}
+                                                                    placeholder="Adicionar equipamento..."
+                                                                />
+                                                                <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                                                                    {act.tools.map(tool => {
+                                                                        const toolObj = tools.find(t => t.id === tool.resourceId);
+                                                                        if (!toolObj) return null;
+                                                                        return (
+                                                                            <div key={tool.resourceId} className="flex items-center justify-between bg-gray-100 p-2 rounded text-sm">
+                                                                                <span>{toolObj.name}</span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => removeResource(act.id, 'tools', tool.resourceId)}
+                                                                                    className="text-red-500 hover:text-red-700"
+                                                                                >
+                                                                                    ×
+                                                                                </button>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-700 mb-2">Materiais</label>
+                                                                <SearchableSelect
+                                                                    options={materials.map(m => ({ value: m.id, label: m.name }))}
+                                                                    value=""
+                                                                    onChange={(val) => addResourceToActivity(act.id, 'materials', val)}
+                                                                    placeholder="Adicionar material..."
+                                                                />
+                                                                <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                                                                    {act.materials.map(material => {
+                                                                        const matObj = materials.find(m => m.id === material.resourceId);
+                                                                        if (!matObj) return null;
+                                                                        return (
+                                                                            <div key={material.resourceId} className="flex items-center justify-between bg-gray-100 p-2 rounded text-sm">
+                                                                                <div>
+                                                                                    <span>{matObj.name}</span>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        min="0"
+                                                                                        step="0.1"
+                                                                                        value={material.quantity}
+                                                                                        onChange={(e) => updateResourceQuantity(act.id, 'materials', material.resourceId, parseFloat(e.target.value))}
+                                                                                        className="block w-16 mt-1 px-2 py-1 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs"
+                                                                                    />
+                                                                                </div>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => removeResource(act.id, 'materials', material.resourceId)}
+                                                                                    className="text-red-500 hover:text-red-700"
+                                                                                >
+                                                                                    ×
+                                                                                </button>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">Materiais</label>
-                                                        <SearchableSelect
-                                                            options={materials.map(m => ({ value: m.id, label: m.name }))}
-                                                            value=""
-                                                            onChange={(val) => addResourceToActivity(act.id, 'materials', val)}
-                                                            placeholder="Adicionar material..."
-                                                        />
-                                                        <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                                                            {act.materials.map(material => {
-                                                                const matObj = materials.find(m => m.id === material.resourceId);
-                                                                if (!matObj) return null;
-                                                                return (
-                                                                    <div key={material.resourceId} className="flex items-center justify-between bg-gray-100 p-2 rounded text-sm">
-                                                                        <div>
-                                                                            <span>{matObj.name}</span>
-                                                                            <input
-                                                                                type="number"
-                                                                                min="0"
-                                                                                step="0.1"
-                                                                                value={material.quantity}
-                                                                                onChange={(e) => updateResourceQuantity(act.id, 'materials', material.resourceId, parseFloat(e.target.value))}
-                                                                                className="block w-16 mt-1 px-2 py-1 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs"
-                                                                            />
-                                                                        </div>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => removeResource(act.id, 'materials', material.resourceId)}
-                                                                            className="text-red-500 hover:text-red-700"
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
