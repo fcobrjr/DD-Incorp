@@ -66,6 +66,7 @@ const Planning: React.FC = () => {
 
     const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
     const [showFilters, setShowFilters] = useState(false);
+    const [pageSize, setPageSize] = useState(15);
     const [filters, setFilters] = useState({
         search: '',
         client: '',
@@ -459,7 +460,7 @@ const Planning: React.FC = () => {
             {showFilters && (
                 <div className="mb-6 p-6 bg-white rounded-lg shadow-md border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
                     <h3 className="text-base font-semibold text-gray-900 mb-4">Filtros Avançados</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6" style={{ gridAutoRows: 'max-content' }}>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                             <input type="text" value={filters.search} onChange={handleFilterChange} name="search" placeholder="Buscar por nome..." className="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:ring-primary-500 sm:text-sm"/>
@@ -509,6 +510,18 @@ const Planning: React.FC = () => {
                                 placeholder="Todos"
                             />
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Linhas por página</label>
+                            <select
+                                id="pageSize"
+                                value={pageSize}
+                                onChange={(e) => setPageSize(parseInt(e.target.value))}
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            >
+                                <option value={15}>15 linhas</option>
+                                <option value={30}>30 linhas</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             )}
@@ -550,20 +563,21 @@ const Planning: React.FC = () => {
                         <div className="text-center py-10 text-gray-500 col-span-full">Nenhum plano cadastrado.</div>
                     )
                 ) : (
-                    <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="overflow-y-auto" style={{ maxHeight: `${pageSize * 55 + 40}px` }}>
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sublocal</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ambiente</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atividade</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Periodicidade</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
                                 {flattenedActivities.length > 0 ? flattenedActivities.map(item => (
                                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.client}</td>
@@ -584,8 +598,9 @@ const Planning: React.FC = () => {
                                         <td colSpan={7} className="text-center py-10 text-gray-500">Nenhum plano cadastrado.</td>
                                     </tr>
                                 )}
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>

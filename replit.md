@@ -129,11 +129,12 @@ Regras de atividades:
 - **Regras de validação**: Nome não pode ser igual ao original, cria automaticamente nova atividade no cadastro
 
 ## Planning (Planejamento) Table & Cards
-- **Filtros em cascata**: Pesquisa, Cliente, Local, Sublocal, Ambiente
+- **Filtros independentes**: Pesquisa, Cliente, Local, Sublocal, Ambiente, Linhas por página (15/30)
 - **Colunas na tabela**: Cliente, Local, Sublocal, Ambiente, Atividade, Periodicidade, Ações
 - **Cards com informações completas**: Mostram Cliente, Local, Sublocal, Ambiente para identificar o local
 - **Visualizações**: Cards (grid) e Tabela
 - **Funcionalidades**: Editar e deletar planos de trabalho
+- **Tabela com altura ajustável**: Header fixo (sticky), rolagem vertical com barra, fórmula: `pageSize × 55 + 40`
 
 ## Schedule (Agenda)
 - **Filtros em cascata**: Pesquisa, Cliente, Local, Sublocal, Ambiente (mesma lógica Planning)
@@ -157,6 +158,7 @@ Páginas com filtros:
 - **Team**: Nome, Setor, Status (Ativos/Inativos)
 
 ## Recent Changes
+- 2025-12-27: Adicionado padrão de dimensionamento de tabela na página Planejamento (altura ajustável, header fixo, filtro linhas por página)
 - 2025-12-27: Corrigido comportamento cascata dos filtros em Áreas Comuns - todos os filtros agora são independentes e livres
 - 2025-12-27: Adicionada coluna de "Ações" na tabela de Atividades Planejadas do modal de visualização de Áreas Comuns (deletar atividade e adicionar nova)
 - 2025-12-27: Modal de nova atividade no CommonAreas agora é idêntico ao da página Atividades (com Equipamentos, Materiais e InfoTooltip)
